@@ -1,44 +1,17 @@
----
-output: github_document
----
+# deploy_recombuddy.R
+#
+# Author: Bob Verity
+# Date: 2025-03-20
+#
+# Purpose:
+# A sandbox to demonstrate the use of the recombuddy package.
+#
+# ------------------------------------------------------------------
 
-<!-- README.md is generated from README.Rmd. Please edit that file -->
-
-```{r, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>",
-  fig.path = "man/figures/README-",
-  out.width = "100%"
-)
-```
-
-# recombuddy
-
-<!-- badges: start -->
-<!-- badges: end -->
-
-The goal of recombuddy is to ...
-
-## Installation
-
-Install recombuddy from [GitHub](https://github.com/) with:
-
-```{r, eval=FALSE}
-install.packages("devtools")
-devtools::install_github("PlasmoGenEpi/recombuddy")
-```
-
-## Example
-
-This is a basic example which shows you how to solve a common problem:
-
-```{r example}
-library(recombuddy)
-set.seed(1)
-
-# define the number of samples in the initial sample set
+# define the number of samples in the initial sample set, and in the final
+# population that we are producing
 n_set <- 10
+n_pop <- 20
 
 # define concentration parameter of the Dirichlet distribution
 f <- 0.1
@@ -48,61 +21,34 @@ alpha <- (1 - f) / f
 set_props <- rdirichlet(n_set, alpha = alpha)
 
 # simulate a single sample
-MOI <- 3
-sim <- sim_sample(k = c(0, 1, 2), rho = 6e-7, set_props = set_props)
-
-names(sim[[1]])
-
-sim[[1]]$is_nonrecomb
-sim[[1]]$index_nonrecomb
-
-sim[[2]]$is_nonrecomb
-sim[[2]]$index_nonrecomb
-
-sim[[1]]$segments
-
-sim[[2]]$segments
-
-sim[[3]]$segments
+sim <- sim_sample(k = c(0, 1, 0), rho = 6e-7, set_props = set_props)
 
 # get all genotypes into a single table
 df_all_genotypes <- get_all_genotypes(sim)
-df_all_genotypes
 
-# plot
 plot_genotypes(df_all_genotypes)
-```
 
-## Title
 
-```{r}
+
 # draw positions of loci along the genome
 df_loci <- draw_loci(n_loci = 2e3)
-df_loci
 
 # draw population-level allele frequencies (PLAFs) at specified loci
 df_PLAF <- draw_PLAF(df_loci = df_loci)
-df_PLAF
 
 # draw alleles for each member of sample set
 df_sample_set <- draw_sample_set_WSAF(df_PLAF = df_PLAF, n_set = n_set)
-df_sample_set
 
 # draw proportions for each genotype
 df_genotype_props <- draw_genotype_props(MOI = MOI, alpha = 10)
-df_genotype_props
 
 # calculate true within-sample allele frequencies (WSAFs) for the entire sample
 df_WSAF <- get_WSAF(df_all_genotypes = df_all_genotypes,
                     df_sample_set = df_sample_set,
                     df_genotype_props = df_genotype_props)
-df_WSAF
 
 # apply a simple read count model
 df_counts <- draw_read_counts(df_WSAF = df_WSAF)
-df_counts
 
 # plot read counts
 plot_read_counts(df_counts = df_counts)
-```
-
