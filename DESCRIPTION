@@ -1,11 +1,16 @@
 Package: recombuddy
 Type: Package
-Title: What the Package Does (Title Case)
-Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
+Title: Lightweight Simulator of Recombination in Polyclonal Infections
+Version: 1.0.0
+Authors@R: as.person(c(
+    "Bob Verity <r.verity@imperial.ac.uk> [aut, cre]"
+  ))
+Description: recombuddy is a lightweight genetic simulation toolkit designed to model recombination
+and polyclonality, making it particularly well-suited for Plasmodium falciparum analysis. Its
+streamlined simulation framework captures key patterns observed in real data—such as within-sample
+relatedness and mosaic haplotypes—without unnecessary complexity. The package provides core functionality
+for simulating recombination blocks, projecting marker loci onto these genomic patterns, and visualizing
+the resulting allele frequencies and genotype structures.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true

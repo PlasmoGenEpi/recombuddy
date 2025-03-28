@@ -18,7 +18,7 @@ knitr::opts_chunk$set(
 <!-- badges: start -->
 <!-- badges: end -->
 
-The goal of recombuddy is to ...
+The goal of *recombuddy* is to simulate *Plasmodium falciparum* genetic data in a way that captures realistic patterns of polyclonality and within-sample relatedness. It achieves this using a simple statistical model of recombination, where the genome is partitioned into blocks that each inherit from a specified ancestral haplotype. This approach allows for the generation of mosaic genomes that reflect the structure and complexity commonly observed in real infections, while avoiding full genomic transmission modelling.
 
 ## Installation
 
@@ -26,52 +26,116 @@ Install recombuddy from [GitHub](https://github.com/) with:
 
 ```{r, eval=FALSE}
 install.packages("devtools")
-devtools::install_github("PlasmoGenEpi/recombuddy")
+devtools::install_github("PlasmoGenEpi/recombuddy@v1.0.0")
 ```
+
+Notice we have used a tagged version number here to avoid issues with backward compatibility.
 
 ## Example
 
-This is a basic example which shows you how to solve a common problem:
+There are two main methods for simulating genetic data in recombuddy:
 
-```{r example}
+1. **Using a "sample set" of real haploid genotypes (aka a reference panel)**. Simulation works by creating new haploid genotypes that are mosaics of the original the sample set. These haploid genotypes can be combined to produce polyclonal samples.
+2. **Creating entirely synthetic genotypes by drawing from an allele frequency distribution**. This works the same way as above, except the sample set is also simulated by drawing values from an allele frequency distribution at specified loci.
+
+Both methods start the same way; by simulating blocks of inheritance.
+
+### Simulating blocks of inheritance
+
+```{r}
 library(recombuddy)
 set.seed(1)
+```
 
-# define the number of samples in the initial sample set
+Let's imagine we have 10 genotypes in our sample set.
+
+```{r}
 n_set <- 10
+```
 
-# define concentration parameter of the Dirichlet distribution
-f <- 0.1
+Our first decision is how frequently each genotype should be sampled. In many scenarios - such as low-transmission or outbreak settings - a small number of genotypes may dominate the population. This step also allows us to control the average relatedness *between* samples; that is, the probability that haploid genotypes from two distinct individuals are identical by descent (IBD) at a given locus.
+
+Here, we take the statistically principled approach of drawing proportions from a Dirichlet distribution. The concentration parameter `alpha` dictates the skew of this distribution, with small values leading to highly skewed distributions. High skew means a high chance of sampling the same individual multiple times. Flipping this argument around, if we define the parameter `f` to be the probability of identity by descent $Pr(IBD)$ between two samples, then we can calculate `alpha` directly from `f` as follows:
+
+```{r example}
+# define concentration parameter of the Dirichlet distribution directly from f
+f <- 0.2
 alpha <- (1 - f) / f
 
 # draw proportions of each member of the sample set
 set_props <- rdirichlet(n_set, alpha = alpha)
+set_props
+```
 
+Next, we simulate a single polyclonal sample using `sim_sample()`. Arguments to this function are:
+
+- `k`: a vector of values specifying the number of serial meioses for each haploid genotype in the sample. There is one value per haploid genotype, meaning the length of this vector specifies the multiplicity of infection (MOI). When `k[i]=0` there is no meiosis, and values are copied over exactly from the sample set. When `k[i]=1` there is a single meiosis of two members of the sample set. When `k[i]=2` there are two serial meioses starting with four members of the sample set, and so on. Higher values of `k` tend to produce more blocks and smaller blocks, with the potential for more complex patterns of inheritance. A more detailed description of the statistical model is given at the end
+- `rho`: the recombination rate (per-site, per-meiosis).
+- `set_props`: the proportions of each member of the sample set.
+
+Let's generate a sample with MOI=3:
+
+```{r}
 # simulate a single sample
-MOI <- 3
-sim <- sim_sample(k = c(0, 1, 2), rho = 6e-7, set_props = set_props)
+k <- c(0, 1, 2)
+MOI <- length(k)
+samp1 <- sim_sample(k = k, rho = 6e-7, set_props = set_props)
+```
 
-names(sim[[1]])
+The output of `sim_sample()` is a list with one element per haploid genotype, so three elements in this example. Each haploid genotype has the following components:
 
-sim[[1]]$is_nonrecomb
-sim[[1]]$index_nonrecomb
+```{r}
+names(samp1[[1]])
+```
 
-sim[[2]]$is_nonrecomb
-sim[[2]]$index_nonrecomb
+`is_nonrecomb` states whether this genotype was produced as a direct copy from the sample set with no meiosis. We already know this from the vector `k`, i.e. if we set `k[i]=0` then there will be no meiosis, but this information is repeated here for book-keeping. The `index_nonrecomb` element states which member of the sample set was copied from. Both of these elements are for convenience, the idea being that if we know that a haploid genotype was an exact copy then it might streamline our downstream bioinformatic process.
 
-sim[[1]]$segments
+```{r}
+# the first haploid genotype was simulated with k[1]=0
+samp1[[1]]$is_nonrecomb
+samp1[[1]]$index_nonrecomb
 
-sim[[2]]$segments
+# the second haploid genotype was simulated with k[2]=1
+samp1[[2]]$is_nonrecomb
+samp1[[2]]$index_nonrecomb
+```
 
-sim[[3]]$segments
+The most important simulation output is the `segments` object. This details which member of the sample set is ancestral (the `index`) for a series of segments that make up the entire genome. Here is what is looks like for the first haploid genome (remember, no meiosis):
 
+```{r}
+samp1[[1]]$segments
+```
+
+These segments span the entire lengths of all 14 chromosomes, which is what we would expect with no meiosis.
+
+Here is what it looks like for the `k[2]=1` case (single meiosis):
+
+```{r}
+samp1[[2]]$segments
+```
+
+Now we have some segments that are smaller than the whole chromosome, and the genotype is a mosaic of ancestral individuals 5 and 10.
+
+Here is what it looks like for the `k[3]=2` case (two serial meioses):
+
+```{r}
+samp1[[3]]$segments
+```
+
+Now we have more complex blocks composed of individuals 2, 3, and 5. The reason there are only 3 ancestors here when there should be 2^2 parents is that the same parent was chosen twice by chance.
+
+Let's combine these three data.frames together into a single object, then we can produce a simple vizualisation of the blocks:
+
+```{r}
 # get all genotypes into a single table
-df_all_genotypes <- get_all_genotypes(sim)
+df_all_genotypes <- get_all_genotypes(samp1)
 df_all_genotypes
 
 # plot
 plot_genotypes(df_all_genotypes)
 ```
+
+
 
 ## Title
 
