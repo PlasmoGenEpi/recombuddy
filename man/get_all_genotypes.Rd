@@ -2,13 +2,14 @@
 % Please edit documentation in R/main.R
 \name{get_all_genotypes}
 \alias{get_all_genotypes}
-\title{TODO.}
+\title{Collect all `segment` tables together}
 \usage{
 get_all_genotypes(sim)
 }
 \arguments{
-\item{sim}{TODO}
+\item{sim}{a single simulated sample, as produced by `sim_sample()`.}
 }
 \description{
-TODO.
+For a given sample, extracts the `segments` element of each
+  haploid genotype into a single tibble.
 }

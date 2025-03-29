@@ -2,15 +2,16 @@
 % Please edit documentation in R/main.R
 \name{sim_nonrecomb}
 \alias{sim_nonrecomb}
-\title{TODO.}
+\title{Simulate segments in a non-recombining genotype}
 \usage{
 sim_nonrecomb(index, chrom_sizes)
 }
 \arguments{
-\item{index}{TODO.}
+\item{index}{the index of the ancestor in the sample set.}
 
-\item{chrom_sizes}{TODO.}
+\item{chrom_sizes}{a vector of chromosome sizes.}
 }
 \description{
-TODO.
+Produces a tibble of segments along the genome, assuming the
+  genotype is copied over exactly from a single ancestor (no meiosis).
 }

@@ -2,15 +2,19 @@
 % Please edit documentation in R/main.R
 \name{plot_read_counts}
 \alias{plot_read_counts}
-\title{TODO.}
+\title{Plots draws from the read counts model}
 \usage{
 plot_read_counts(df_counts, chrom_sizes = get_chrom_sizes())
 }
 \arguments{
-\item{df_counts}{TODO}
+\item{df_counts}{a data.frame (tibble) of read counts, as produced by
+`draw_read_counts()`.}
 
-\item{chrom_sizes}{TODO}
+\item{chrom_sizes}{lengths of each chromosome, taken from `get_chrom_sizes()`
+by default.}
 }
 \description{
-TODO.
+Takes values produced by `draw_read_counts()` and produces a
+  simple plot showing *estimated* WSAFs along the genome. This simple plot
+  often contains patterns that demonstrate clear blocks of relatedness.
 }

@@ -2,19 +2,37 @@
 % Please edit documentation in R/main.R
 \name{sim_sample}
 \alias{sim_sample}
-\title{TODO.}
+\title{Simulate a single sample}
 \usage{
-sim_sample(k, rho, set_props, chrom_sizes = get_chrom_sizes())
+sim_sample(k, rho = 7.4e-07, set_props, chrom_sizes = get_chrom_sizes())
 }
 \arguments{
-\item{k}{TODO}
+\item{k}{the number of serial meiosis events.}
 
-\item{rho}{TODO}
+\item{rho}{the recombination rate (per-site, per-meiosis). By default uses
+the value 7.4e-7 from Miles et al. (2016).}
 
-\item{set_props}{TODO}
+\item{set_props}{proportions of each of the members of the sample set.
+Dictates the probability they are chosen as an ancestor.}
 
-\item{chrom_sizes}{TODO}
+\item{chrom_sizes}{lengths of each chromosome, taken from `get_chrom_sizes()`
+by default.}
+}
+\value{
+A list with one element per haploid genome. Within each element is
+  another list with three elements; the first two specify whether the
+  genotype was copied over without recombination, and if so, which ancestor
+  was it copied from. The final element `segments` contains the richest
+  information - a tibble giving segments along the genome and which memeber
+  of the sample set is ancestral to each segment.
 }
 \description{
-TODO.
+Simulates one or more haploid genotypes within a single sample
+  by drawing ancestors from a sample set and applying recombination.
+}
+\references{
+Miles A, Iqbal Z, Vauterin P, Pearson R, Campino S, Theron M, Gould K, Mead D, Drury E, O'Brien J, et al. (2016).
+*Indels, structural variation, and recombination drive genomic diversity in Plasmodium falciparum*.
+Genome Research, 26(9), 1288–1299.
+\doi{10.1101/gr.203711.115}
 }

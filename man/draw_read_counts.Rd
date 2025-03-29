@@ -2,17 +2,28 @@
 % Please edit documentation in R/main.R
 \name{draw_read_counts}
 \alias{draw_read_counts}
-\title{TODO.}
+\title{Simulate read counts given known within-sample allele frequencies (WSAFs).}
 \usage{
 draw_read_counts(df_WSAF, depth = 100, overdisp = 0.01)
 }
 \arguments{
-\item{df_WSAF}{TODO}
+\item{df_WSAF}{a data.frame (tibble) of WSAFs, as produced by `get_WSAF()`.}
 
-\item{depth}{TODO}
+\item{depth}{the *size* argument in the beta-binomial.}
 
-\item{overdisp}{TODO}
+\item{overdisp}{the over-dispersion of the beta-binomial distribution.}
 }
 \description{
-TODO.
+Uses a simple statistical model to draw simulated read counts.
+  The expected value is given by the WSAF at a locus, the distribution is
+  beta-binomial with a given denominator size (read depth) and
+  over-dispersion parameter.
+}
+\details{
+draws from `rbbinom()` in the `extraDistr` package using the
+  parameters:
+  \itemize{
+    \item `alpha = WSAF*(1 - overdisp) / overdisp`
+    \item `beta = (1 - WSAF)*(1 - overdisp) / overdisp)`
+  }
 }

@@ -2,17 +2,30 @@
 % Please edit documentation in R/main.R
 \name{get_WSAF}
 \alias{get_WSAF}
-\title{TODO.}
+\title{Calculates within-sample allele frequencies (WSAFs) of a sample}
 \usage{
 get_WSAF(df_all_genotypes, df_sample_set, df_genotype_props)
 }
 \arguments{
-\item{df_all_genotypes}{TODO}
+\item{df_all_genotypes}{a data.frame (tibble) containing segments along the
+genome of all haploid genotypes, as produced by `get_all_genotypes()`.}
 
-\item{df_sample_set}{TODO}
+\item{df_sample_set}{a data.frame (tibble) of the observed alleles in a
+sample set, as produced by `draw_sample_set_WSAF()`.}
 
-\item{df_genotype_props}{TODO}
+\item{df_genotype_props}{a data.frame (tibble) of genomic proportions, as
+produced by `draw_genotype_props()`.}
 }
 \description{
-TODO.
+Combines information over multiple data.frames to calculate the
+  overall within-sample allele frequency (WSAF) of the sample. This is the
+  "convolution" of all the haploid genotypes in the sample.
+}
+\details{
+Takes a tibble containing segments along the genome of all haploid
+  genotypes (as produced by `get_all_genotypes()`) and combines this with a
+  tibble of the observed alleles in a sample set (as produced by
+  `draw_sample_set_WSAF()`) to calculate the overall WSAF. Haploid genotypes
+  are combined in proportions defined by another tibble, as produced by
+  `draw_genotype_props()`.
 }

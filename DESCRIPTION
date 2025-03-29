@@ -6,11 +6,11 @@ Authors@R: as.person(c(
     "Bob Verity <r.verity@imperial.ac.uk> [aut, cre]"
   ))
 Description: recombuddy is a lightweight genetic simulation toolkit designed to model recombination
-and polyclonality, making it particularly well-suited for Plasmodium falciparum analysis. Its
-streamlined simulation framework captures key patterns observed in real data—such as within-sample
-relatedness and mosaic haplotypes—without unnecessary complexity. The package provides core functionality
-for simulating recombination blocks, projecting marker loci onto these genomic patterns, and visualizing
-the resulting allele frequencies and genotype structures.
+    and polyclonality, making it particularly well-suited for Plasmodium falciparum analysis. Its
+    streamlined simulation framework captures key patterns observed in real data—such as within-sample
+    relatedness and mosaic haplotypes—without unnecessary complexity. The package provides core functionality
+    for simulating recombination blocks, projecting marker loci onto these genomic patterns, and visualizing
+    the resulting allele frequencies and genotype structures.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true

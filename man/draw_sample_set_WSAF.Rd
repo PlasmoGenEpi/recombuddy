@@ -2,15 +2,17 @@
 % Please edit documentation in R/main.R
 \name{draw_sample_set_WSAF}
 \alias{draw_sample_set_WSAF}
-\title{TODO.}
+\title{Draw a sample set given known population-level allele frequencies (PLAFs)}
 \usage{
 draw_sample_set_WSAF(df_PLAF, n_set)
 }
 \arguments{
-\item{df_PLAF}{TODO}
+\item{df_PLAF}{a data.frame (tibble) of PLAFs, as produced by `draw_PLAF()`.}
 
-\item{n_set}{TODO}
+\item{n_set}{the number of members of the sample set.}
 }
 \description{
-TODO.
+Takes a data.frame (tibble) of known PLAFs, as produced by
+  `draw_PLAF()`, and simulates a sample set with alleles drawn from these
+  frequencies. The PLAF is taken to be the frequency of the REF allele.
 }

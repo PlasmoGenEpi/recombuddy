@@ -2,15 +2,18 @@
 % Please edit documentation in R/main.R
 \name{draw_loci}
 \alias{draw_loci}
-\title{TODO.}
+\title{Sample loci at random along the genome}
 \usage{
 draw_loci(n_loci = 1000, chrom_sizes = get_chrom_sizes())
 }
 \arguments{
-\item{n_loci}{TODO}
+\item{n_loci}{number of markers.}
 
-\item{chrom_sizes}{TODO}
+\item{chrom_sizes}{lengths of each chromosome, taken from `get_chrom_sizes()`
+by default.}
 }
 \description{
-TODO.
+Creates a data.frame (tibble) of marker positions (loci) by
+  sampling sites uniformly along the genome. Can be useful when using a
+  simulated sample set, rather than a true reference panel.
 }

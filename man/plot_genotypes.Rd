@@ -2,13 +2,17 @@
 % Please edit documentation in R/main.R
 \name{plot_genotypes}
 \alias{plot_genotypes}
-\title{TODO.}
+\title{Block visualization of genome segments}
 \usage{
 plot_genotypes(df_genotypes)
 }
 \arguments{
-\item{df_genotypes}{TODO}
+\item{df_genotypes}{a data.frame (or tibble) of genomic segments, as produced
+by `get_all_genotypes()`.}
 }
 \description{
-TODO.
+Takes a table of genomic segments (see `?get_all_genotypes`) and
+  produces a simple plot showing chromosomes as blocks where the colour of a
+  segment indicates which member of the sample set is ancestral. This
+  provides an easy way to view blocks of shared ancestry.
 }

@@ -2,17 +2,21 @@
 % Please edit documentation in R/main.R
 \name{draw_PLAF}
 \alias{draw_PLAF}
-\title{TODO.}
+\title{Sample population-level allele frequencies (PLAFs) at given loci}
 \usage{
-draw_PLAF(df_loci, beta_shape1 = 10, beta_shape2 = 10)
+draw_PLAF(df_loci, beta_shape1 = 0.5, beta_shape2 = 0.5)
 }
 \arguments{
-\item{df_loci}{TODO}
+\item{df_loci}{a data.frame (tibble) of locus positions, as produced by
+`draw_loci()`.}
 
-\item{beta_shape1}{TODO}
-
-\item{beta_shape2}{TODO}
+\item{beta_shape1, beta_shape2}{shape parameters of the Beta distribution on
+PLAFs.}
 }
 \description{
-TODO.
+For each locus in a data.frame, draws a PLAF from a Beta
+  distribution with specified shape parameters. These parameters should be
+  chosen to represent the allele frequency spectrum of *loci of interest*,
+  which may differ from the frequency spectrum of background mutations (i.e.
+  tending towards intermediate frequencies).
 }

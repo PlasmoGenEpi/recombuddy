@@ -2,15 +2,19 @@
 % Please edit documentation in R/main.R
 \name{draw_genotype_props}
 \alias{draw_genotype_props}
-\title{TODO.}
+\title{Sample genotype proportions}
 \usage{
 draw_genotype_props(MOI, alpha)
 }
 \arguments{
-\item{MOI}{TODO}
+\item{MOI}{the multiplicity of infection of the sample.}
 
-\item{alpha}{TODO}
+\item{alpha}{the concentration parameter of the symmetric Dirichlet
+distribution on genotype proportions.}
 }
 \description{
-TODO.
+Although a sample may contain multiple haploid genotypes, these
+  are not usually present in equal proportions. This function draws genotype
+  proportions from a symmetric Dirichlet distribution, giving control over
+  the level of skew.
 }

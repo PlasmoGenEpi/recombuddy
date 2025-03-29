@@ -1,5 +1,6 @@
 ---
 output: github_document
+bibliography: references.bib
 ---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
@@ -63,14 +64,14 @@ f <- 0.2
 alpha <- (1 - f) / f
 
 # draw proportions of each member of the sample set
-set_props <- rdirichlet(n_set, alpha = alpha)
+set_props <- rdirichlet_single(n_set, alpha = alpha)
 set_props
 ```
 
 Next, we simulate a single polyclonal sample using `sim_sample()`. Arguments to this function are:
 
-- `k`: a vector of values specifying the number of serial meioses for each haploid genotype in the sample. There is one value per haploid genotype, meaning the length of this vector specifies the multiplicity of infection (MOI). When `k[i]=0` there is no meiosis, and values are copied over exactly from the sample set. When `k[i]=1` there is a single meiosis of two members of the sample set. When `k[i]=2` there are two serial meioses starting with four members of the sample set, and so on. Higher values of `k` tend to produce more blocks and smaller blocks, with the potential for more complex patterns of inheritance. A more detailed description of the statistical model is given at the end
-- `rho`: the recombination rate (per-site, per-meiosis).
+- `k`: a vector of values specifying the number of serial meioses for each haploid genotype in the sample. There is one value per haploid genotype, meaning the length of this vector specifies the multiplicity of infection (MOI). When `k[i]=0` there is no meiosis, and values are copied over exactly from the sample set. When `k[i]=1` there is a single meiosis of two members of the sample set. When `k[i]=2` there are two serial meioses starting with four members of the sample set, and so on. Higher values of `k` tend to produce more blocks and smaller blocks, with the potential for more complex patterns of inheritance. A more detailed description of the statistical model is given below.
+- `rho`: the recombination rate (per-site, per-meiosis). By default we use the value 7.4e-7 from @miles2016indels.
 - `set_props`: the proportions of each member of the sample set.
 
 Let's generate a sample with MOI=3:
@@ -79,7 +80,7 @@ Let's generate a sample with MOI=3:
 # simulate a single sample
 k <- c(0, 1, 2)
 MOI <- length(k)
-samp1 <- sim_sample(k = k, rho = 6e-7, set_props = set_props)
+samp1 <- sim_sample(k = k, rho = 7.4e-7, set_props = set_props)
 ```
 
 The output of `sim_sample()` is a list with one element per haploid genotype, so three elements in this example. Each haploid genotype has the following components:
@@ -88,19 +89,9 @@ The output of `sim_sample()` is a list with one element per haploid genotype, so
 names(samp1[[1]])
 ```
 
-`is_nonrecomb` states whether this genotype was produced as a direct copy from the sample set with no meiosis. We already know this from the vector `k`, i.e. if we set `k[i]=0` then there will be no meiosis, but this information is repeated here for book-keeping. The `index_nonrecomb` element states which member of the sample set was copied from. Both of these elements are for convenience, the idea being that if we know that a haploid genotype was an exact copy then it might streamline our downstream bioinformatic process.
+`is_nonrecomb` states whether this genotype was produced as a direct copy from the sample set with no meiosis. We already know this from the vector `k`, i.e. if we set `k[i]=0` then there will be no meiosis, but this information is repeated here for book-keeping. The `index_nonrecomb` element states which member of the sample set was copied from. Both of these elements are for convenience, the idea being that if we know that a haploid genotype was an exact copy then it may streamline our downstream bioinformatic pipeline.
 
-```{r}
-# the first haploid genotype was simulated with k[1]=0
-samp1[[1]]$is_nonrecomb
-samp1[[1]]$index_nonrecomb
-
-# the second haploid genotype was simulated with k[2]=1
-samp1[[2]]$is_nonrecomb
-samp1[[2]]$index_nonrecomb
-```
-
-The most important simulation output is the `segments` object. This details which member of the sample set is ancestral (the `index`) for a series of segments that make up the entire genome. Here is what is looks like for the first haploid genome (remember, no meiosis):
+The most important simulation output is the `segments` object. This details which member of the sample set is ancestral (the `index`) for a series of segments that make up the entire genome. Here is what is looks like for the first haploid genome (no meiosis):
 
 ```{r}
 samp1[[1]]$segments
@@ -122,9 +113,9 @@ Here is what it looks like for the `k[3]=2` case (two serial meioses):
 samp1[[3]]$segments
 ```
 
-Now we have more complex blocks composed of individuals 2, 3, and 5. The reason there are only 3 ancestors here when there should be 2^2 parents is that the same parent was chosen twice by chance.
+Now we have more complex blocks composed of individuals 2, 3, and 5. The reason there are only 3 ancestors here when there should be 2^2=4 parents is that the same parent was chosen twice by chance.
 
-Let's combine these three data.frames together into a single object, then we can produce a simple vizualisation of the blocks:
+Let's combine these three data.frames together into a single object. Then we can produce a simple visualization of the blocks:
 
 ```{r}
 # get all genotypes into a single table
@@ -135,38 +126,73 @@ df_all_genotypes
 plot_genotypes(df_all_genotypes)
 ```
 
+We can see from this plot that there is a complex pattern of relatedness. All three haploid genotypes contain blocks of ancestor 5, meaning there will be IBD segments along the genome.
 
+If out plan is to pull directly from a reference panel of haploid genotypes, then the role of *recombuddy* ends here. We can take the output in the `segments` elements and pass into our downstream bioinformatic pipeline to produce synthetic genotypes.
 
-## Title
+## Simulating allele frequencies
+
+We may want to simulate a reference panel, rather than using real data. We start by setting the positions of the loci of interest along the genome. These can be defined manually, but we will use a convenience function to draw uniformly along the genome:
 
 ```{r}
 # draw positions of loci along the genome
 df_loci <- draw_loci(n_loci = 2e3)
 df_loci
+```
 
-# draw population-level allele frequencies (PLAFs) at specified loci
-df_PLAF <- draw_PLAF(df_loci = df_loci)
+Next, we need to simulate population-level allele frequencies (PLAFs) at all loci. We can do this by drawing from a Beta distribution with shape parameters that define the allele frequency distribution:
+
+```{r}
+# draw PLAFs at specified loci
+df_PLAF <- draw_PLAF(df_loci = df_loci, beta_shape1 = 0.5, beta_shape2 = 0.5)
 df_PLAF
+```
 
+Now we can simulate the complete sample set by drawing from these PLAFs:
+
+```{r}
 # draw alleles for each member of sample set
 df_sample_set <- draw_sample_set_WSAF(df_PLAF = df_PLAF, n_set = n_set)
 df_sample_set
+```
 
+Finally, we need to know what proportion of our sample is made up of each of the three genotypes. We can simulate this from a Dirichlet distribution:
+
+```{r}
 # draw proportions for each genotype
 df_genotype_props <- draw_genotype_props(MOI = MOI, alpha = 10)
 df_genotype_props
+```
 
+We now have everything we need to calculate the true within-sample allele frequency (WSAF) of our sample. This combines information over all three haploid genotypes, weighted by their proportions:
+
+```{r}
 # calculate true within-sample allele frequencies (WSAFs) for the entire sample
 df_WSAF <- get_WSAF(df_all_genotypes = df_all_genotypes,
                     df_sample_set = df_sample_set,
                     df_genotype_props = df_genotype_props)
 df_WSAF
+```
 
+These are the true WSAFs, but in reality we only have an estimate of the WSAF produced by a series of genotyping reads. We can overlay a read counts model onto the true WSAFs by assuming that observed WSAFs are beta-binomial around the true value, with a given read depth and over-dispersion parameter:
+
+```{r}
 # apply a simple read count model
-df_counts <- draw_read_counts(df_WSAF = df_WSAF)
+df_counts <- draw_read_counts(df_WSAF = df_WSAF, depth = 100, overdisp = 0.01)
 df_counts
+```
 
+Finally, we can plot the observed WSAFs:
+
+```{r, fig.width=8, fig.height=4}
 # plot read counts
 plot_read_counts(df_counts = df_counts)
 ```
 
+From the plot, we can just about see the areas of the genome where there is a signal of relatedness. The different "bands" in this plot correspond to different combinations of the underlying genotype proportions, produced by IBD between haploid genotypes.
+
+## The Model
+
+(TODO)
+
+## References
