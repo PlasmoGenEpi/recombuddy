@@ -45,7 +45,7 @@ Both methods start the same way; by simulating blocks of inheritance.
 
 ```{r}
 library(recombuddy)
-set.seed(1)
+set.seed(5)
 ```
 
 Let's imagine we have 10 genotypes in our sample set.
@@ -60,7 +60,7 @@ Here, we take the statistically principled approach of drawing proportions from 
 
 ```{r example}
 # define concentration parameter of the Dirichlet distribution directly from f
-f <- 0.2
+f <- 0.1
 alpha <- (1 - f) / f
 
 # draw proportions of each member of the sample set
@@ -105,7 +105,7 @@ Here is what it looks like for the `k[2]=1` case (single meiosis):
 samp1[[2]]$segments
 ```
 
-Now we have some segments that are smaller than the whole chromosome, and the genotype is a mosaic of ancestral individuals 5 and 10.
+Now we have some segments that are smaller than the whole chromosome, and the genotype is a mosaic of ancestral individuals 2 and 8.
 
 Here is what it looks like for the `k[3]=2` case (two serial meioses):
 
@@ -113,7 +113,7 @@ Here is what it looks like for the `k[3]=2` case (two serial meioses):
 samp1[[3]]$segments
 ```
 
-Now we have more complex blocks composed of individuals 2, 3, and 5. The reason there are only 3 ancestors here when there should be 2^2=4 parents is that the same parent was chosen twice by chance.
+Now we have more complex blocks composed of individuals 2, 4, and 7. The reason there are only 3 ancestors here when there should be 2^2=4 parents is that the same parent was chosen twice by chance.
 
 Let's combine these three data.frames together into a single object. Then we can produce a simple visualization of the blocks:
 
@@ -126,9 +126,9 @@ df_all_genotypes
 plot_genotypes(df_all_genotypes)
 ```
 
-We can see from this plot that there is a complex pattern of relatedness. All three haploid genotypes contain blocks of ancestor 5, meaning there will be IBD segments along the genome.
+We can see from this plot that there is a complex pattern of relatedness between haploid genomes.
 
-If out plan is to pull directly from a reference panel of haploid genotypes, then the role of *recombuddy* ends here. We can take the output in the `segments` elements and pass into our downstream bioinformatic pipeline to produce synthetic genotypes.
+If our plan is to pull directly from a reference panel of haploid genotypes, then the role of *recombuddy* ends here. We can take the output in the `segments` elements and pass into our downstream bioinformatic pipeline to produce synthetic genotypes. If our plan is to use a synthetic sample set then the analysis continues.
 
 ## Simulating allele frequencies
 

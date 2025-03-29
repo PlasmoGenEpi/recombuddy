@@ -47,7 +47,7 @@ Both methods start the same way; by simulating blocks of inheritance.
 
 ``` r
 library(recombuddy)
-set.seed(1)
+set.seed(5)
 ```
 
 Let’s imagine we have 10 genotypes in our sample set.
@@ -74,14 +74,14 @@ by descent $`Pr(IBD)`$ between two samples, then we can calculate
 
 ``` r
 # define concentration parameter of the Dirichlet distribution directly from f
-f <- 0.2
+f <- 0.1
 alpha <- (1 - f) / f
 
 # draw proportions of each member of the sample set
 set_props <- rdirichlet_single(n_set, alpha = alpha)
 set_props
-#>  [1] 0.009478167 0.081912664 0.023858816 0.045597922 0.696655093 0.001457516
-#>  [7] 0.024172231 0.017633511 0.003904626 0.095329454
+#>  [1] 0.026699104 0.243224692 0.012984787 0.318369030 0.036088779 0.210935723
+#>  [7] 0.028352619 0.064805150 0.001442449 0.057097667
 ```
 
 Next, we simulate a single polyclonal sample using `sim_sample()`.
@@ -139,20 +139,20 @@ samp1[[1]]$segments
 #> # A tibble: 14 × 4
 #>    chrom start     end index
 #>    <int> <dbl>   <dbl> <int>
-#>  1     1     1  640851     5
-#>  2     2     1  947102     5
-#>  3     3     1 1067971     5
-#>  4     4     1 1200490     5
-#>  5     5     1 1343557     5
-#>  6     6     1 1418242     5
-#>  7     7     1 1445207     5
-#>  8     8     1 1472805     5
-#>  9     9     1 1541735     5
-#> 10    10     1 1687656     5
-#> 11    11     1 2038340     5
-#> 12    12     1 2271494     5
-#> 13    13     1 2925236     5
-#> 14    14     1 3291936     5
+#>  1     1     1  640851     4
+#>  2     2     1  947102     4
+#>  3     3     1 1067971     4
+#>  4     4     1 1200490     4
+#>  5     5     1 1343557     4
+#>  6     6     1 1418242     4
+#>  7     7     1 1445207     4
+#>  8     8     1 1472805     4
+#>  9     9     1 1541735     4
+#> 10    10     1 1687656     4
+#> 11    11     1 2038340     4
+#> 12    12     1 2271494     4
+#> 13    13     1 2925236     4
+#> 14    14     1 3291936     4
 ```
 
 These segments span the entire lengths of all 14 chromosomes, which is
@@ -162,46 +162,46 @@ Here is what it looks like for the `k[2]=1` case (single meiosis):
 
 ``` r
 samp1[[2]]$segments
-#> # A tibble: 24 × 4
-#>    chrom   start     end index
-#>    <int>   <dbl>   <dbl> <int>
-#>  1     1       1  640851     5
-#>  2     2       1   80552     5
-#>  3     2   80553  947102    10
-#>  4     3       1 1067971    10
-#>  5     4       1  274787     5
-#>  6     4  274788 1200490    10
-#>  7     5       1 1343557    10
-#>  8     6       1  751038    10
-#>  9     6  751039 1325210     5
-#> 10     6 1325211 1418242    10
-#> # ℹ 14 more rows
+#> # A tibble: 22 × 4
+#>    chrom  start     end index
+#>    <int>  <dbl>   <dbl> <int>
+#>  1     1      1  513918     2
+#>  2     1 513919  640851     8
+#>  3     2      1  947102     2
+#>  4     3      1  334501     8
+#>  5     3 334502  482451     2
+#>  6     3 482452 1067971     8
+#>  7     4      1 1200490     2
+#>  8     5      1  197194     2
+#>  9     5 197195  500981     8
+#> 10     5 500982 1343557     2
+#> # ℹ 12 more rows
 ```
 
 Now we have some segments that are smaller than the whole chromosome,
-and the genotype is a mosaic of ancestral individuals 5 and 10.
+and the genotype is a mosaic of ancestral individuals 2 and 8.
 
 Here is what it looks like for the `k[3]=2` case (two serial meioses):
 
 ``` r
 samp1[[3]]$segments
-#> # A tibble: 31 × 4
-#>    chrom  start     end index
-#>    <int>  <dbl>   <dbl> <int>
-#>  1     1      1  640851     5
-#>  2     2      1  381848     4
-#>  3     2 381849  947102     5
-#>  4     3      1  430259     5
-#>  5     3 430260  552846     4
-#>  6     3 552847  672918     5
-#>  7     3 672919 1067971     4
-#>  8     4      1 1200490     5
-#>  9     5      1 1343557     5
-#> 10     6      1  388900     5
-#> # ℹ 21 more rows
+#> # A tibble: 44 × 4
+#>    chrom   start     end index
+#>    <int>   <dbl>   <dbl> <int>
+#>  1     1       1  152354     2
+#>  2     1  152355  640851     7
+#>  3     2       1  111287     2
+#>  4     2  111288  536449     7
+#>  5     2  536450  947102     4
+#>  6     3       1 1067971     7
+#>  7     4       1 1103378     4
+#>  8     4 1103379 1200490     2
+#>  9     5       1   96195     4
+#> 10     5   96196  116812     2
+#> # ℹ 34 more rows
 ```
 
-Now we have more complex blocks composed of individuals 2, 3, and 5. The
+Now we have more complex blocks composed of individuals 2, 4, and 7. The
 reason there are only 3 ancestors here when there should be 2^2=4
 parents is that the same parent was chosen twice by chance.
 
@@ -212,20 +212,20 @@ Then we can produce a simple visualization of the blocks:
 # get all genotypes into a single table
 df_all_genotypes <- get_all_genotypes(samp1)
 df_all_genotypes
-#> # A tibble: 69 × 5
+#> # A tibble: 80 × 5
 #>    genotype chrom start     end index
 #>       <int> <int> <dbl>   <dbl> <int>
-#>  1        1     1     1  640851     5
-#>  2        1     2     1  947102     5
-#>  3        1     3     1 1067971     5
-#>  4        1     4     1 1200490     5
-#>  5        1     5     1 1343557     5
-#>  6        1     6     1 1418242     5
-#>  7        1     7     1 1445207     5
-#>  8        1     8     1 1472805     5
-#>  9        1     9     1 1541735     5
-#> 10        1    10     1 1687656     5
-#> # ℹ 59 more rows
+#>  1        1     1     1  640851     4
+#>  2        1     2     1  947102     4
+#>  3        1     3     1 1067971     4
+#>  4        1     4     1 1200490     4
+#>  5        1     5     1 1343557     4
+#>  6        1     6     1 1418242     4
+#>  7        1     7     1 1445207     4
+#>  8        1     8     1 1472805     4
+#>  9        1     9     1 1541735     4
+#> 10        1    10     1 1687656     4
+#> # ℹ 70 more rows
 ```
 
 ``` r
@@ -236,14 +236,14 @@ plot_genotypes(df_all_genotypes)
 
 <img src="man/figures/README-unnamed-chunk-10-1.png" width="100%" />
 
-We can see from this plot that there is a complex pattern of
-relatedness. All three haploid genotypes contain blocks of ancestor 5,
-meaning there will be IBD segments along the genome.
+We can see from this plot that there is a complex pattern of relatedness
+between haploid genomes.
 
-If out plan is to pull directly from a reference panel of haploid
+If our plan is to pull directly from a reference panel of haploid
 genotypes, then the role of *recombuddy* ends here. We can take the
 output in the `segments` elements and pass into our downstream
-bioinformatic pipeline to produce synthetic genotypes.
+bioinformatic pipeline to produce synthetic genotypes. If our plan is to
+use a synthetic sample set then the analysis continues.
 
 ## Simulating allele frequencies
 
@@ -259,16 +259,16 @@ df_loci
 #> # A tibble: 2,000 × 2
 #>    chrom   pos
 #>    <int> <int>
-#>  1     1  2833
-#>  2     1 15923
-#>  3     1 19772
-#>  4     1 27219
-#>  5     1 43782
-#>  6     1 47932
-#>  7     1 72526
-#>  8     1 83733
-#>  9     1 87081
-#> 10     1 92293
+#>  1     1  5612
+#>  2     1 15105
+#>  3     1 29268
+#>  4     1 36032
+#>  5     1 44673
+#>  6     1 74228
+#>  7     1 78143
+#>  8     1 79950
+#>  9     1 80763
+#> 10     1 94072
 #> # ℹ 1,990 more rows
 ```
 
@@ -281,18 +281,18 @@ parameters that define the allele frequency distribution:
 df_PLAF <- draw_PLAF(df_loci = df_loci, beta_shape1 = 0.5, beta_shape2 = 0.5)
 df_PLAF
 #> # A tibble: 2,000 × 3
-#>    chrom   pos    PLAF
-#>    <int> <int>   <dbl>
-#>  1     1  2833 0.0253 
-#>  2     1 15923 0.437  
-#>  3     1 19772 0.00222
-#>  4     1 27219 0.535  
-#>  5     1 43782 0.212  
-#>  6     1 47932 0.409  
-#>  7     1 72526 0.637  
-#>  8     1 83733 0.942  
-#>  9     1 87081 0.796  
-#> 10     1 92293 0.500  
+#>    chrom   pos  PLAF
+#>    <int> <int> <dbl>
+#>  1     1  5612 0.677
+#>  2     1 15105 0.155
+#>  3     1 29268 0.567
+#>  4     1 36032 0.984
+#>  5     1 44673 0.839
+#>  6     1 74228 0.354
+#>  7     1 78143 0.111
+#>  8     1 79950 0.499
+#>  9     1 80763 0.940
+#> 10     1 94072 0.980
 #> # ℹ 1,990 more rows
 ```
 
@@ -305,16 +305,16 @@ df_sample_set
 #> # A tibble: 20,000 × 4
 #>    index chrom   pos  WSAF
 #>    <int> <int> <int> <dbl>
-#>  1     1     1  2833     0
-#>  2     1     1 15923     0
-#>  3     1     1 19772     0
-#>  4     1     1 27219     1
-#>  5     1     1 43782     0
-#>  6     1     1 47932     1
-#>  7     1     1 72526     1
-#>  8     1     1 83733     1
-#>  9     1     1 87081     1
-#> 10     1     1 92293     0
+#>  1     1     1  5612     1
+#>  2     1     1 15105     0
+#>  3     1     1 29268     1
+#>  4     1     1 36032     1
+#>  5     1     1 44673     1
+#>  6     1     1 74228     1
+#>  7     1     1 78143     0
+#>  8     1     1 79950     0
+#>  9     1     1 80763     1
+#> 10     1     1 94072     1
 #> # ℹ 19,990 more rows
 ```
 
@@ -329,9 +329,9 @@ df_genotype_props
 #> # A tibble: 3 × 2
 #>   genotype  prop
 #>      <int> <dbl>
-#> 1        1 0.391
-#> 2        2 0.325
-#> 3        3 0.285
+#> 1        1 0.436
+#> 2        2 0.182
+#> 3        3 0.382
 ```
 
 We now have everything we need to calculate the true within-sample
@@ -347,16 +347,16 @@ df_WSAF
 #> # A tibble: 2,000 × 3
 #>    chrom   pos  WSAF
 #>    <int> <int> <dbl>
-#>  1     1  2833     0
-#>  2     1 15923     1
-#>  3     1 19772     0
-#>  4     1 27219     0
-#>  5     1 43782     0
-#>  6     1 47932     0
-#>  7     1 72526     0
-#>  8     1 83733     1
-#>  9     1 87081     0
-#> 10     1 92293     1
+#>  1     1  5612 1    
+#>  2     1 15105 0    
+#>  3     1 29268 1    
+#>  4     1 36032 1    
+#>  5     1 44673 0.564
+#>  6     1 74228 0.436
+#>  7     1 78143 0.436
+#>  8     1 79950 1    
+#>  9     1 80763 1    
+#> 10     1 94072 1    
 #> # ℹ 1,990 more rows
 ```
 
@@ -374,16 +374,16 @@ df_counts
 #> # Rowwise: 
 #>    chrom   pos   REF   ALT
 #>    <int> <int> <dbl> <dbl>
-#>  1     1  2833     0   100
-#>  2     1 15923   100     0
-#>  3     1 19772     0   100
-#>  4     1 27219     0   100
-#>  5     1 43782     0   100
-#>  6     1 47932     0   100
-#>  7     1 72526     0   100
-#>  8     1 83733   100     0
-#>  9     1 87081     0   100
-#> 10     1 92293   100     0
+#>  1     1  5612   100     0
+#>  2     1 15105     0   100
+#>  3     1 29268   100     0
+#>  4     1 36032   100     0
+#>  5     1 44673    65    35
+#>  6     1 74228    37    63
+#>  7     1 78143    46    54
+#>  8     1 79950   100     0
+#>  9     1 80763   100     0
+#> 10     1 94072   100     0
 #> # ℹ 1,990 more rows
 ```
 
