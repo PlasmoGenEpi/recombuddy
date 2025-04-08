@@ -18,7 +18,7 @@ f <- 0.1
 alpha <- (1 - f) / f
 
 # draw proportions of each member of the sample set
-set_props <- rdirichlet(n_set, alpha = alpha)
+set_props <- rdirichlet_single(n_set, alpha = alpha)
 
 # simulate a single sample
 sim <- sim_sample(k = c(0, 1, 0), rho = 6e-7, set_props = set_props)

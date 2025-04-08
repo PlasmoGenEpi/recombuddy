@@ -253,7 +253,7 @@ plot_genotypes <- function(df_genotypes) {
     geom_rect(aes(xmin = start, xmax = end, ymin = chrom - 0.9, ymax = chrom - 0.1,
                   fill = as.factor(index)), color = grey(0)) +
     facet_wrap(~sprintf("Genotype_%s", genotype)) +
-    scale_fill_discrete(name = "Parent Index")
+    scale_fill_discrete(name = "Ancestral Index")
 }
 
 #------------------------------------------------
@@ -465,4 +465,40 @@ plot_read_counts <- function(df_counts, chrom_sizes = get_chrom_sizes()) {
     ylab("Within-sample allele frequency (REF)") + xlab("Position on contiguous genome")
 }
 
+#------------------------------------------------
+#' @title Zero-truncated negative binomial distribution
+#'
+#' @description Implements the zero-truncated negative binomial distribution, in
+#'   which there is zero chance of seeing `n=0`.
+#'
+#' @details The negative binomial distribution has several alternative
+#'   parameterizations. We follow the same parameterization implemented in
+#'   `dnbinom()`, with the small caveat that defining via `mu` is not available,
+#'   only via `size` and `prob`. Note that the mean of the truncated
+#'   distribution is different from the mean of the un-truncated distribution,
+#'   now being given by `size*(1 - prob) / (prob*(1 - prob^size))`.
+#'
+#' @param x,size,prob,log these parameters are passed directly to `dnbinom()`.
+#'   See `?dnbinom` for further details of these parameters.
+#'
+#' @importFrom stats dnbinom qnbinom pnbinom
+#' @export
 
+dztnbinom <- function(x, size, prob, log = FALSE) {
+  s <- dnbinom(x = 0, size = size, prob = prob, log = FALSE)
+  ret <- dnbinom(x = x, size = size, prob = prob, log = FALSE) / (1 - s)
+  ret[x == 0] <- 0
+  if (log) {
+    ret <- log(ret)
+  }
+  return(ret)
+}
+rztnbinom <- function(n, size, prob) {
+  prob0 <- dnbinom(x = 0, size = size, prob = prob, log = FALSE)
+  q_thresh <- prob0 + (1 - prob0)*(1 - 1e-4)
+  n_max <- qnbinom(q_thresh, size = size, prob = prob)
+  cumul_prob <- pnbinom(0:n_max, size = size, prob = prob) - prob0
+  X <- runif(n, min = 0, max = max(cumul_prob))
+  ret <- as.numeric(cut(X, breaks = cumul_prob, include.lowest = TRUE))
+  return(ret)
+}

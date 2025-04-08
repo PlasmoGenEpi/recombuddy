@@ -1,7 +1,7 @@
 Package: recombuddy
 Type: Package
 Title: Lightweight Simulator of Recombination in Polyclonal Infections
-Version: 1.0.0
+Version: 1.0.1
 Authors@R: as.person(c(
     "Bob Verity <r.verity@imperial.ac.uk> [aut, cre]"
   ))
