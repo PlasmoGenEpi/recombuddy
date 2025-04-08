@@ -4,7 +4,13 @@
 \alias{sim_recomb}
 \title{Simulate segments in a recombining genotype}
 \usage{
-sim_recomb(k, rho = 7.4e-07, set_props, chrom_sizes)
+sim_recomb(
+  k,
+  rho = 7.4e-07,
+  set_props,
+  chrom_sizes,
+  zero_based_positioning = T
+)
 }
 \arguments{
 \item{k}{the number of serial meiosis events.}
@@ -15,7 +21,7 @@ the value 7.4e-7 from Miles et al. (2016).}
 \item{set_props}{proportions of each of the members of the sample set.
 Dictates the probability they are chosen as an ancestor.}
 
-\item{chrom_sizes}{lengths of each chromosome, taken from `get_chrom_sizes()`
+\item{chrom_sizes}{lengths of each chromosome, default taken from `get_pf3d7_chrom_sizes()`
 by default.}
 }
 \description{

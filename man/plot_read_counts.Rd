@@ -4,13 +4,13 @@
 \alias{plot_read_counts}
 \title{Plots draws from the read counts model}
 \usage{
-plot_read_counts(df_counts, chrom_sizes = get_chrom_sizes())
+plot_read_counts(df_counts, chrom_sizes = get_pf3d7_chrom_sizes())
 }
 \arguments{
 \item{df_counts}{a data.frame (tibble) of read counts, as produced by
 `draw_read_counts()`.}
 
-\item{chrom_sizes}{lengths of each chromosome, taken from `get_chrom_sizes()`
+\item{chrom_sizes}{lengths of each chromosome, default taken from `get_pf3d7_chrom_sizes()`
 by default.}
 }
 \description{
