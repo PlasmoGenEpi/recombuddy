@@ -4,10 +4,10 @@
 \alias{draw_genotype_props}
 \title{Sample genotype proportions}
 \usage{
-draw_genotype_props(MOI, alpha)
+draw_genotype_props(COI, alpha = 10)
 }
 \arguments{
-\item{MOI}{the multiplicity of infection of the sample.}
+\item{COI}{the complexity of infection of the sample.}
 
 \item{alpha}{the concentration parameter of the symmetric Dirichlet
 distribution on genotype proportions.}

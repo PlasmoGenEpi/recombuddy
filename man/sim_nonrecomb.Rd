@@ -4,12 +4,14 @@
 \alias{sim_nonrecomb}
 \title{Simulate segments in a non-recombining genotype}
 \usage{
-sim_nonrecomb(index, chrom_sizes)
+sim_nonrecomb(index, chrom_sizes, zero_based_positioning = T)
 }
 \arguments{
 \item{index}{the index of the ancestor in the sample set.}
 
 \item{chrom_sizes}{a vector of chromosome sizes.}
+
+\item{zero_based_positioning}{whether to make the output positions zero based}
 }
 \description{
 Produces a tibble of segments along the genome, assuming the
