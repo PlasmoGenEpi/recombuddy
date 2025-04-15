@@ -11,6 +11,7 @@ sim_population(
   coi_r,
   coi_p,
   k_s,
+  max_coi = 100,
   rho = 7.4e-07,
   chrom_sizes = get_pf3d7_chrom_sizes()
 )
@@ -25,6 +26,8 @@ sim_population(
 \item{coi_r, coi_p}{the r and p parameters to be given to the zero truncated negative binomial distribution COI generator `recombuddy::rztnbinom()` see `?rztnbinom` for more details}
 
 \item{k_s}{the s parameter to be given to the type 1 geometric distribution random generator function `rgeom()` to select for serial meiosis}
+
+\item{max_coi}{the maximum allowable COI}
 
 \item{rho}{the recombination rate}
 
