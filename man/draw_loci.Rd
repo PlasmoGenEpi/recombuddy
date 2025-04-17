@@ -4,12 +4,12 @@
 \alias{draw_loci}
 \title{Sample loci at random along the genome}
 \usage{
-draw_loci(n_loci = 1000, chrom_sizes = get_chrom_sizes())
+draw_loci(n_loci = 1000, chrom_sizes = get_pf3d7_chrom_sizes())
 }
 \arguments{
 \item{n_loci}{number of markers.}
 
-\item{chrom_sizes}{lengths of each chromosome, taken from `get_chrom_sizes()`
+\item{chrom_sizes}{lengths of each chromosome, default taken from `get_pf3d7_chrom_sizes()`
 by default.}
 }
 \description{
