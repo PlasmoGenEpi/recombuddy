@@ -579,6 +579,7 @@ generate_serial_meiosis_k <-function(coi_r, coi_p, k_s, max_coi = 100){
 #' @param pop_alpha the alpha parameter to set for the dirichlet function for the population proportions, lower alphas generate more closely related final populations
 #' @param coi_r,coi_p the r and p parameters to be given to the zero truncated negative binomial distribution COI generator `recombuddy::rztnbinom()` see `?rztnbinom` for more details
 #' @param k_s the s parameter to be given to the type 1 geometric distribution random generator function `rgeom()` to select for serial meiosis
+#' @param max_k the maximum k allowed
 #' @param max_coi the maximum allowable COI
 #' @param rho the recombination rate
 #' @param chrom_sizes a named vector of lengths of chromosome lengths
@@ -590,7 +591,7 @@ generate_serial_meiosis_k <-function(coi_r, coi_p, k_s, max_coi = 100){
 #' @examples
 #' # simulate pop_alpha 9 (~10% between sample relatedness), coi_r = 0.25, coi_p = 0.7 (COI mean of 1.256, ~80.4 proportion will be monoclonal), k_s = 0.5 (50% of genotypes will be recombinant)
 #' pop1 = sim_population(paste0("sample", seq(0,100,1)), 5, pop_alpha = 9, coi_r = 0.25, coi_p = 0.7, k_s = 0.5)
-sim_population <- function(input_samples, n_samples_out, pop_alpha, coi_r, coi_p, k_s, max_coi = 100, rho = 7.4e-7, chrom_sizes = get_pf3d7_chrom_sizes()){
+sim_population <- function(input_samples, n_samples_out, pop_alpha, coi_r, coi_p, k_s, max_k = 20, max_coi = 100, rho = 7.4e-7, chrom_sizes = get_pf3d7_chrom_sizes()){
   ret = list()
   # generate a index key tibble for samples
   input_samples_df = tibble(ancestral_genotype = input_samples) |> mutate(index = row_number())
@@ -602,7 +603,11 @@ sim_population <- function(input_samples, n_samples_out, pop_alpha, coi_r, coi_p
   # simulate samples
   ret[["simulated_samples"]] = list()
   for(samp in 1:n_samples_out){
-    ret[["simulated_samples"]][[samp]] = sim_sample(k = generate_serial_meiosis_k(coi_r = coi_r, coi_p = coi_p, k_s = k_s, max_coi = max_coi),
+    current_k = generate_serial_meiosis_k(coi_r = coi_r, coi_p = coi_p, k_s = k_s, max_coi = max_coi)
+    while(max(current_k) > max_k){
+      current_k = generate_serial_meiosis_k(coi_r = coi_r, coi_p = coi_p, k_s = k_s, max_coi = max_coi)
+    }
+    ret[["simulated_samples"]][[samp]] = sim_sample(k = current_k,
                                                     rho = rho,
                                                     set_props = set_props,
                                                     chrom_sizes = chrom_sizes)
