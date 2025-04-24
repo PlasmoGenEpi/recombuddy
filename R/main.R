@@ -598,8 +598,18 @@ sim_population <- function(input_samples, n_samples_out, pop_alpha, coi_r, coi_p
   ret[["ancestral_indexes"]] = input_samples_df
   # set proportions
   set_props <- rdirichlet_single(nrow(input_samples_df), alpha = pop_alpha)
-  ret[["set_props"]] = set_props
-  ret[["chrom_sizes"]] = chrom_sizes
+
+  # save population parameters
+  ret[["parameters"]] = list()
+  ret[["parameters"]][["set_props"]] = set_props
+  ret[["parameters"]][["chrom_sizes"]] = chrom_sizes
+  ret[["parameters"]][["pop_alpha"]] = pop_alpha
+  ret[["parameters"]][["coi_r"]] = coi_r
+  ret[["parameters"]][["coi_p"]] = coi_p
+  ret[["parameters"]][["k_s"]] = k_s
+  ret[["parameters"]][["max_k"]] = max_k
+  ret[["parameters"]][["max_coi"]] = max_coi
+  ret[["parameters"]][["rho"]] = rho
   # simulate samples
   ret[["simulated_samples"]] = list()
   for(samp in 1:n_samples_out){
