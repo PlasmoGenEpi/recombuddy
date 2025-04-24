@@ -4,7 +4,7 @@ Title: Lightweight Simulator of Recombination in Polyclonal Infections
 Version: 1.0.2
 Authors@R: as.person(c(
     "Bob Verity <r.verity@imperial.ac.uk> [aut, cre]", 
-    "Nick Hathaway <nicholas.hathaway@ucsf.edu> [aut, cre]"
+    "Nick Hathaway <nicholas.hathaway@ucsf.edu> [aut]"
   ))
 Description: recombuddy is a lightweight genetic simulation toolkit designed to model recombination
     and polyclonality, making it particularly well-suited for Plasmodium analysis. Its
