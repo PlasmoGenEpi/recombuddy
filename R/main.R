@@ -769,3 +769,68 @@ intersect_panel_with_simulated_population <-function(panel_locs, simulated_popul
   return(all_sample_genotypes |> left_join(simulated_population[["ancestral_indexes"]]) |>  dplyr::rename(within_sample_genotype = genotype, ancestral_index = index))
 }
 
+
+#' Calculate population allele frequencies based on new ancestor population frequencies
+#'
+#' @param simulated_pop The simulated population
+#' @param ancestral_pop_seqs the ancestral population, should have the columns of ancestral_genotype, target_name, and seq
+#'
+#' @returns population allele frequencies table with column names of target_name, seq, pop_allele_freq
+#' @export
+#'
+#' @examples
+#' example_ancestors <- tibble(
+#' ancestral_genotype = rep(paste0("AG", 1:4), times = 2),
+#' target_name        = rep(c("target_A", "target_B"), each = 4),
+#' seq = c(
+#'   "AGCTAGCTAG",
+#'   "CGTACGTACG",
+#'   "TTGCAAGCTA",
+#'   "GGCATTCGAA",
+#'   "TACGATCGAT",
+#'   "CCGGAATTCC",
+#'   "ATATCGCGTA",
+#'   "GGTTCCAAGC"
+#' )
+#' )
+#' pop1 = sim_population(unique(example_ancestors$ancestral_genotype), 5, pop_alpha = 9, coi_r = 0.25, coi_p = 0.7, k_s = 0.5)
+#' pop_freqs = calculate_new_pop_allele_freqs(pop1, example_ancestors)
+calculate_new_pop_allele_freqs <- function(simulated_pop, ancestral_pop_seqs){
+  # required columns
+  # ancestral_genotype, target_name, seq
+  # validate columns of the intersecting panel_locs
+  rules <- validate::validator(
+    is.character(ancestral_genotype),
+    is.character(target_name),
+    is.character(seq),
+    ! is.na(ancestral_genotype),
+    ! is.na(target_name),
+    ! is.na(seq)
+  )
+  fails <- validate::confront(ancestral_pop_seqs, rules) |>
+    validate::summary() |>
+    dplyr::filter(error)
+  warns = c()
+  if (nrow(fails) > 0) {
+    stop(paste0(
+      "ancestral_pop_seqs failed one or more validation checks, check if required columns are present and that they pass these checks: \n",
+      paste0(fails$expression, collapse = "\n")
+    ) )
+  }
+  ancestral_pop_seqs_with_new_freqs = ancestral_pop_seqs %>%
+    left_join(simulated_pop$ancestral_indexes) %>%
+    left_join(tibble(
+      index = 1:length(simulated_pop$parameters$set_props),
+      set_props = simulated_pop$parameters$set_props
+    ))
+
+  ret = ancestral_pop_seqs_with_new_freqs %>%
+    group_by(target_name, seq) %>%
+    summarise(new_prop = sum(set_props)) %>%
+    group_by(target_name) %>%
+    mutate(total_new_prop = sum(new_prop)) %>%
+    mutate(pop_allele_freq = new_prop/total_new_prop) %>%
+    select(target_name, seq, pop_allele_freq)
+  return (ret)
+}
+
