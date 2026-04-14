@@ -10,6 +10,9 @@ sim_sample_co_transmission(
   mosquitos_dir_conc,
   k_s,
   max_k = 20,
+  coi_r,
+  coi_p,
+  max_coi = 100,
   rho = 7.4e-07,
   set_props,
   chrom_sizes = get_pf3d7_chrom_sizes()
@@ -27,6 +30,10 @@ to control the skew of strains being contributed by each mosquito, lower values 
 \item{k_s}{the s parameter to be given to the type 1 geometric distribution random generator function `rgeom()` to select for serial meiosis}
 
 \item{max_k}{the maximum k allowed}
+
+\item{coi_r, coi_p}{the r and p parameters to be given to the zero truncated negative binomial distribution COI generator `recombuddy::rztnbinom()` see `?rztnbinom` for more details}
+
+\item{max_coi}{the maximum allowable COI}
 
 \item{rho}{the recombination rate (per-site, per-meiosis). By default uses
 the value 7.4e-7 from Miles et al. (2016).}

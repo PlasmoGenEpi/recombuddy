@@ -357,6 +357,20 @@ generate_coi <- function(coi_r, coi_p, max_coi = 100){
   return(sample_coi |> as.vector())
 }
 
+#------------------------------------------------
+#' @title Generate a COI
+#'
+#' @description generate COI
+#' @param n the number of COIs to generate
+#' @param coi_r,coi_p the r and p parameters to be given to the zero truncated negative binomial distribution COI generator `recombuddy::rztnbinom()` see `?rztnbinom` for more details
+#' @param max_coi the maximum allowable COI
+#'
+#' @return a COI
+#' @export
+generate_coi_n <- function(n, coi_r, coi_p, max_coi = 100){
+  return(replicate(n, generate_coi(coir_r, coi_p, max_coi)))
+}
+
 
 #------------------------------------------------
 #' @title Simulate a single sample
@@ -369,6 +383,8 @@ generate_coi <- function(coi_r, coi_p, max_coi = 100){
 #'   to simulate number of mosquito bites that lead to this infection
 #' @param mosquitos_dir_conc the alpha concentration value to be given to \code{\link{assign_strain_sources}}
 #'   to control the skew of strains being contributed by each mosquito, lower values mean
+#' @param coi_r,coi_p the r and p parameters to be given to the zero truncated negative binomial distribution COI generator `recombuddy::rztnbinom()` see `?rztnbinom` for more details
+#' @param max_coi the maximum allowable COI
 #' @param k_s the s parameter to be given to the type 1 geometric distribution random generator function `rgeom()` to select for serial meiosis
 #' @param max_k the maximum k allowed
 #' @param rho the recombination rate (per-site, per-meiosis). By default uses
@@ -405,6 +421,7 @@ generate_coi <- function(coi_r, coi_p, max_coi = 100){
 sim_sample_co_transmission <- function(coi,
                                        n_mosquitos_lambda, mosquitos_dir_conc,
                                        k_s, max_k = 20,
+                                       coi_r, coi_p, max_coi = 100,
                                        rho = 7.4e-7,
                                        set_props, chrom_sizes = get_pf3d7_chrom_sizes()) {
   # if monoclonal then the mosquito sources doesn't matter
@@ -441,9 +458,22 @@ sim_sample_co_transmission <- function(coi,
         k[genotype_source_indexes] = current_k
         if(current_k > 0){
           current_n_parents <- 2^current_k
-          current_parents <- sample(x = n_set, size = current_n_parents, replace = TRUE, prob = set_props)
-          if (all(current_parents == current_parents[1])) {
-            current_parents[1] <- sample(x = (1:n_set)[-current_parents[1]], size = 1, prob = set_props[-current_parents[1]])
+          # @todo, should be taking into account more the amount of co-transmission
+          # max distinct parents should be number of events, COI and chance of co-transmission (currently lacking)
+          max_distinct_parents = min(current_n_parents, 1 + round(mean(replicate(current_k, generate_coi(coi_r = coi_r , coi_p = coi_p)))))
+          # current_parents <- sample(x = n_set, size = current_n_parents, replace = TRUE, prob = set_props)
+          initial_parents = sample(x = n_set, size = max_distinct_parents, replace = TRUE, prob = set_props)
+          if(max_distinct_parents == current_n_parents){
+            current_parents = initial_parents
+          } else {
+            initial_parents = sample(x = n_set, size = max_distinct_parents, replace = TRUE, prob = set_props)
+            if (all(initial_parents == initial_parents[1])) {
+              initial_parents[1] <- sample(x = (1:n_set)[-initial_parents[1]], size = 1, prob = set_props[-initial_parents[1]])
+            }
+            current_parents <- sample(x = initial_parents, size = current_n_parents, replace = TRUE)
+            if (all(current_parents == current_parents[1])) {
+              current_parents[1] <- sample(x = (1:n_set)[-current_parents[1]], size = 1, prob = set_props[-current_parents[1]])
+            }
           }
           for(indx in genotype_source_indexes){
             parents[[indx]] = current_parents
@@ -455,9 +485,22 @@ sim_sample_co_transmission <- function(coi,
         # we want to draw 2^k parents, but they cannot be all identical. Therefore,
         # draw (2^k - 1) with replacement and then draw the last one to be distinct
         current_n_parents <- 2^current_k
-        current_parents <- sample(x = n_set, size = current_n_parents, replace = TRUE, prob = set_props)
-        if (all(current_parents == current_parents[1])) {
-          current_parents[1] <- sample(x = (1:n_set)[-current_parents[1]], size = 1, prob = set_props[-current_parents[1]])
+        # @todo, should be taking into account more the amount of co-transmission
+        # max distinct parents should be number of events, COI and chance of co-transmission (currently lacking)
+        max_distinct_parents = min(current_n_parents, 1 + round(mean(replicate(current_k, generate_coi(coi_r = coi_r , coi_p = coi_p)))))
+        # current_parents <- sample(x = n_set, size = current_n_parents, replace = TRUE, prob = set_props)
+        initial_parents = sample(x = n_set, size = max_distinct_parents, replace = TRUE, prob = set_props)
+        if(max_distinct_parents == current_n_parents){
+          current_parents = initial_parents
+        } else {
+          initial_parents = sample(x = n_set, size = max_distinct_parents, replace = TRUE, prob = set_props)
+          if (all(initial_parents == initial_parents[1])) {
+            initial_parents[1] <- sample(x = (1:n_set)[-initial_parents[1]], size = 1, prob = set_props[-initial_parents[1]])
+          }
+          current_parents <- sample(x = initial_parents, size = current_n_parents, replace = TRUE)
+          if (all(current_parents == current_parents[1])) {
+            current_parents[1] <- sample(x = (1:n_set)[-current_parents[1]], size = 1, prob = set_props[-current_parents[1]])
+          }
         }
         for(indx in genotype_source_indexes){
           parents[[indx]] = current_parents
@@ -956,6 +999,9 @@ sim_population_co_transmission <- function(input_samples, n_samples_out, pop_alp
       coi = current_COI,
       n_mosquitos_lambda = n_mosquitos_lambda,
       mosquitos_dir_conc = mosquitos_dir_conc,
+      coi_r = coi_r,
+      coi_p = coi_p,
+      max_coi = max_coi,
       k_s = k_s,
       max_k = max_k,
       rho = rho,
