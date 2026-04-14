@@ -959,59 +959,73 @@ sim_population <- function(input_samples, n_samples_out, pop_alpha, coi_r, coi_p
 #' @param chrom_sizes a named vector of lengths of chromosome lengths
 #'
 #' @returns a list the simulated population and look up tables of population proportions, sample indexes, and chromosome sizes
-#' @export
 #' @import dplyr
 #' @importFrom tibble tibble
+#' @importFrom furrr future_map
+#' @importFrom future plan availableCores
+#' @export
 #' @examples
 #' # simulate pop_alpha 9 (~10% between sample relatedness), coi_r = 0.5, coi_p = 0.2 (COI mean of 3.62, 32% proportion will be monoclonal), k_s = 0.2 (20% of genotypes will be recombinant)
 #' n_mosquitos_lambda = 3.0 (multiple contributing mosquitoes probable, high EIR), mosquitos_dir_conc = 2.5  (strains spread more evenly across)
 #' pop1 = sim_population_co_transmission(paste0("sample", seq(0,100,1)), 5, pop_alpha = 9, coi_r = 0.5, coi_p = 0.2, n_mosquitos_lambda = 3, mosquitos_dir_conc = 2.5, k_s = 0.2)
+
 sim_population_co_transmission <- function(input_samples, n_samples_out, pop_alpha,
                                            coi_r, coi_p,
                                            n_mosquitos_lambda, mosquitos_dir_conc,
                                            k_s, max_k = 20,
-                                           max_coi = 100, rho = 7.4e-7, chrom_sizes = get_pf3d7_chrom_sizes()){
-  ret = list()
-  # generate a index key tibble for samples
-  input_samples_df = tibble(ancestral_genotype = input_samples) |> mutate(index = row_number())
-  ret[["ancestral_indexes"]] = input_samples_df
-  # set proportions
+                                           max_coi = 100, rho = 7.4e-7,
+                                           chrom_sizes = get_pf3d7_chrom_sizes(),
+                                           n_cores = NULL) {
+  ret  <- list()
+
+  input_samples_df <- tibble(ancestral_genotype = input_samples) |>
+    mutate(index = row_number())
+  ret[["ancestral_indexes"]] <- input_samples_df
+
   set_props <- rdirichlet_single(nrow(input_samples_df), alpha = pop_alpha)
 
-  # save population parameters
-  ret[["parameters"]] = list()
-  ret[["parameters"]][["set_props"]] = set_props
-  ret[["parameters"]][["chrom_sizes"]] = chrom_sizes
-  ret[["parameters"]][["pop_alpha"]] = pop_alpha
-  ret[["parameters"]][["coi_r"]] = coi_r
-  ret[["parameters"]][["coi_p"]] = coi_p
-  ret[["parameters"]][["n_mosquitos_lambda"]] = n_mosquitos_lambda
-  ret[["parameters"]][["mosquitos_dir_conc"]] = mosquitos_dir_conc
-  ret[["parameters"]][["k_s"]] = k_s
-  ret[["parameters"]][["max_k"]] = max_k
-  ret[["parameters"]][["max_coi"]] = max_coi
-  ret[["parameters"]][["rho"]] = rho
-  # simulate samples
-  ret[["simulated_samples"]] = list()
-  for (samp in 1:n_samples_out) {
-    current_COI = generate_coi(coi_r = coi_r, coi_p = coi_p, max_coi = max_coi)
-    ret[["simulated_samples"]][[samp]] = sim_sample_co_transmission(
-      coi = current_COI,
-      n_mosquitos_lambda = n_mosquitos_lambda,
-      mosquitos_dir_conc = mosquitos_dir_conc,
-      coi_r = coi_r,
-      coi_p = coi_p,
-      max_coi = max_coi,
-      k_s = k_s,
-      max_k = max_k,
-      rho = rho,
-      set_props = set_props,
-      chrom_sizes = chrom_sizes
-    )
-  }
-  return (ret)
-}
+  ret[["parameters"]] <- list(
+    set_props         = set_props,
+    chrom_sizes       = chrom_sizes,
+    pop_alpha         = pop_alpha,
+    coi_r             = coi_r,
+    coi_p             = coi_p,
+    n_mosquitos_lambda = n_mosquitos_lambda,
+    mosquitos_dir_conc = mosquitos_dir_conc,
+    k_s               = k_s,
+    max_k             = max_k,
+    max_coi           = max_coi,
+    rho               = rho
+  )
 
+  # set up parallel backend
+  # defaults to all available cores minus 1 to keep the session responsive
+  n_cores <- n_cores %||% max(1L, availableCores() - 1L)
+  plan(multisession, workers = n_cores)
+
+  ret[["simulated_samples"]] <- future_map(
+    seq_len(n_samples_out),
+    function(i) {
+      current_coi <- generate_coi(coi_r = coi_r, coi_p = coi_p, max_coi = max_coi)
+      sim_sample_co_transmission(
+        coi               = current_coi,
+        n_mosquitos_lambda = n_mosquitos_lambda,
+        mosquitos_dir_conc = mosquitos_dir_conc,
+        coi_r             = coi_r,
+        coi_p             = coi_p,
+        max_coi           = max_coi,
+        k_s               = k_s,
+        max_k             = max_k,
+        rho               = rho,
+        set_props         = set_props,
+        chrom_sizes       = chrom_sizes
+      )
+    },
+    .options = furrr_options(seed = TRUE)
+  )
+
+  return(ret)
+}
 
 
 

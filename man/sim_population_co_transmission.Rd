@@ -16,7 +16,8 @@ sim_population_co_transmission(
   max_k = 20,
   max_coi = 100,
   rho = 7.4e-07,
-  chrom_sizes = get_pf3d7_chrom_sizes()
+  chrom_sizes = get_pf3d7_chrom_sizes(),
+  n_cores = NULL
 )
 }
 \arguments{
