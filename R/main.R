@@ -961,7 +961,7 @@ sim_population <- function(input_samples, n_samples_out, pop_alpha, coi_r, coi_p
 #' @returns a list the simulated population and look up tables of population proportions, sample indexes, and chromosome sizes
 #' @import dplyr
 #' @importFrom tibble tibble
-#' @importFrom furrr future_map
+#' @importFrom furrr future_map furrr_options
 #' @importFrom future plan availableCores multisession
 #' @export
 #' @examples
