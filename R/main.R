@@ -368,7 +368,7 @@ generate_coi <- function(coi_r, coi_p, max_coi = 100){
 #' @return a COI
 #' @export
 generate_coi_n <- function(n, coi_r, coi_p, max_coi = 100){
-  return(replicate(n, generate_coi(coir_r, coi_p, max_coi)))
+  return(replicate(n, generate_coi(coi_r, coi_p, max_coi)))
 }
 
 
