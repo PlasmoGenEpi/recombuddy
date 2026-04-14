@@ -769,3 +769,183 @@ intersect_panel_with_simulated_population <-function(panel_locs, simulated_popul
   return(all_sample_genotypes |> left_join(simulated_population[["ancestral_indexes"]]) |>  dplyr::rename(within_sample_genotype = genotype, ancestral_index = index))
 }
 
+
+#' Assign strains in a single infection to source mosquitoes
+#'
+#' For a single infection of known complexity, determines how many mosquitoes
+#' contributed strains and which strains were co-transmitted together. The
+#' generative process operates in two steps: the number of contributing
+#' mosquitoes is drawn from a zero-truncated Poisson distribution scaled by
+#' the entomological inoculation rate; the relative representation of each
+#' mosquito's strains is drawn from a Dirichlet distribution via
+#' \code{\link{rdirichlet_single}}; and strains are assigned to mosquitoes
+#' via a Multinomial draw, with one strain per mosquito guaranteed to ensure
+#' biological coherence.
+#'
+#' @param K integer. Number of strains in the infection, typically obtained
+#'   from a zero-truncated negative binomial COI model.
+#' @param lambda_M numeric. Mean of the zero-truncated Poisson distribution
+#'   for the number of contributing mosquitoes. Scales with the entomological
+#'   inoculation rate (EIR); higher values produce more superinfection.
+#'   See Details for recommended values by transmission setting.
+#' @param dir_conc numeric. Dirichlet concentration parameter passed to
+#'   \code{\link{rdirichlet_single}}, controlling the evenness of strain
+#'   representation across contributing mosquitoes. Values below 1 produce a
+#'   skewed distribution where one mosquito dominates; values substantially
+#'   above 1 produce near-uniform representation across mosquitoes.
+#'   See Details for recommended values by transmission setting.
+#'
+#' @details
+#' The Dirichlet concentration is handled via \code{\link{rdirichlet_single}},
+#' which internally scales the concentration parameter as \code{dir_conc / M}.
+#' This ensures \code{dir_conc} retains a consistent interpretation across
+#' infections with different numbers of contributing mosquitoes \code{M}.
+#'
+#' One strain is pre-assigned to each mosquito before the Multinomial draw
+#' to prevent the degenerate case of a contributing mosquito being assigned
+#' zero strains.
+#'
+#' A strain is classified as co-transmitted if its source mosquito contributed
+#' more than one strain to the infection. A strain is classified as arising
+#' from superinfection if it is the sole strain from its source mosquito.
+#'
+#' \strong{Recommended parameters by transmission setting:}
+#'
+#' \emph{Low transmission / high co-transmission} (e.g. Senegal low-season,
+#' Malawi; Wong et al. 2017, Nkhoma et al. 2020):
+#' \itemize{
+#'   \item \code{lambda_M = 1.2} -- most infections derive from a single
+#'     mosquito bite; cotransmission responsible for the majority of
+#'     polygenomic infections
+#'   \item \code{dir_conc = 0.8} -- one mosquito tends to dominate the
+#'     infection; consistent with high selfing rates observed at low MOI
+#'     (Morlais et al. 2015)
+#' }
+#'
+#' \emph{Moderate transmission} (e.g. Senegal multi-region surveillance;
+#' Wong et al. 2022):
+#' \itemize{
+#'   \item \code{lambda_M = 1.8} -- cotransmission accounts for 43--53\%
+#'     of polygenomic infections even at moderate EIR; \code{lambda_M}
+#'     slightly above 1 reflects that superinfection contributes but does
+#'     not dominate
+#'   \item \code{dir_conc = 1.5} -- moderate spread across mosquitoes
+#' }
+#'
+#' \emph{High transmission / high EIR} (e.g. Uganda, Zambia;
+#' Das et al. 2017, Wong et al. 2018):
+#' \itemize{
+#'   \item \code{lambda_M = 3.0} -- multiple contributing mosquitoes
+#'     probable; COI positively correlated with EIR and superinfection
+#'     rate (Wong et al. 2018)
+#'   \item \code{dir_conc = 2.5} -- strains spread more evenly across
+#'     mosquitoes; selfing rate declines at high MOI (Morlais et al. 2015)
+#' }
+#'
+#' \emph{Southeast Asia / clonal expansion} (e.g. Cambodia;
+#' Henden et al. 2018):
+#' \itemize{
+#'   \item \code{lambda_M = 1.1} -- near-exclusively single contributing
+#'     mosquito; consistent with high background IBD and clonal structure
+#'   \item \code{dir_conc = 0.5} -- very strong dominance of the founding
+#'     clone
+#' }
+#'
+#' @return A named list with the following elements:
+#' \describe{
+#'   \item{\code{K}}{integer. Total number of strains; echo of the input.}
+#'   \item{\code{M}}{integer. Number of contributing mosquitoes drawn.}
+#'   \item{\code{strain_sources}}{integer vector of length \code{K}. The
+#'     mosquito index (1 to \code{M}) that contributed each strain.}
+#'   \item{\code{mosquito_counts}}{integer vector of length \code{M}. The
+#'     number of strains contributed by each mosquito.}
+#'   \item{\code{mosquito_props}}{numeric vector of length \code{M}. The
+#'     proportion of total strains contributed by each mosquito.}
+#'   \item{\code{cotrans_groups}}{named list of length \code{M}. Each element
+#'     is an integer vector of strain indices belonging to that mosquito,
+#'     representing one co-transmitted group.}
+#'   \item{\code{n_cotrans}}{integer. Number of strains sharing a source
+#'     mosquito with at least one other strain.}
+#'   \item{\code{n_superinfect}}{integer. Number of strains that are the sole
+#'     representative of their source mosquito.}
+#' }
+#'
+#' @references
+#' Das S, Muleba M, Stevenson JC, Pringle JC, Norris DE (2017). Beyond the
+#' entomological inoculation rate: characterizing multiple blood feeding
+#' behavior and Plasmodium falciparum multiplicity of infection in Anopheles
+#' mosquitoes in northern Zambia. \emph{Parasites & Vectors}, 10(1), 45.
+#' \doi{10.1186/s13071-017-1977-5}
+#'
+#' Henden L, Lee S, Mueller I, Barry A, Bahlo M (2018). Identity-by-descent
+#' analyses for measuring population dynamics and selection in recombining
+#' pathogens. \emph{PLoS Genetics}, 14(5), e1007279.
+#' \doi{10.1371/journal.pgen.1007279}
+#'
+#' Morlais I, Nsango SE, Toussile W, et al. (2015). Plasmodium falciparum
+#' mating patterns and mosquito infectivity of natural isolates of gametocytes.
+#' \emph{PLoS ONE}, 10(4), e0123777.
+#' \doi{10.1371/journal.pone.0123777}
+#'
+#' Nkhoma SC, Trevino SG, Gorena KM, et al. (2020). Co-transmission of
+#' related malaria parasite lineages shapes within-host parasite diversity.
+#' \emph{Cell Host & Microbe}, 27(1), 93--103.
+#' \doi{10.1016/j.chom.2019.12.001}
+#'
+#' Wong W, Wenger EA, Hartl DL, Wirth DF (2018). Modeling the genetic
+#' relatedness of Plasmodium falciparum parasites following meiotic
+#' recombination and cotransmission. \emph{PLoS Computational Biology},
+#' 14(1), e1005923.
+#' \doi{10.1371/journal.pcbi.1005923}
+#'
+#' Wong W, Griggs AD, Daniels RF, et al. (2017). Genetic relatedness analysis
+#' reveals the cotransmission of genetically related Plasmodium falciparum
+#' parasites in Thiès, Senegal. \emph{Genome Medicine}, 9(1), 5.
+#' \doi{10.1186/s13073-017-0398-0}
+#'
+#' Wong W, Volkman S, Daniels R, et al. (2022). RH: a genetic metric for
+#' measuring intrahost Plasmodium falciparum relatedness and distinguishing
+#' cotransmission from superinfection. \emph{PNAS Nexus}, 1(4), pgac187.
+#' \doi{10.1093/pnasnexus/pgac187}
+#'
+#' @seealso \code{\link{rdirichlet_single}}
+#'
+#' @importFrom extraDistr rtpois
+#' @importFrom stats rmultinom
+#'
+#' @export
+assign_strain_sources <- function(K, lambda_M, dir_conc) {
+
+  M <- min(rtpois(1, lambda = lambda_M, a = 0), K)
+
+  pi_vec <- rdirichlet_single(n = M, alpha = dir_conc)
+
+  guaranteed <- rep(1:M, times = 1)
+  remaining  <- K - M
+
+  if (remaining > 0) {
+    extra           <- rmultinom(1, size = remaining, prob = pi_vec)
+    mosquito_counts <- tabulate(guaranteed, nbins = M) + as.integer(extra)
+  } else {
+    mosquito_counts <- tabulate(guaranteed, nbins = M)
+  }
+
+  strain_sources <- rep(seq_len(M), times = mosquito_counts)
+
+  cotrans_groups        <- lapply(seq_len(M), function(m) which(strain_sources == m))
+  names(cotrans_groups) <- paste0("mosquito_", seq_len(M))
+
+  n_superinfect <- sum(mosquito_counts == 1)
+  n_cotrans     <- K - n_superinfect
+
+  list(
+    K               = K,
+    M               = M,
+    strain_sources  = strain_sources,
+    mosquito_counts = mosquito_counts,
+    mosquito_props  = mosquito_counts / K,
+    cotrans_groups  = cotrans_groups,
+    n_cotrans       = n_cotrans,
+    n_superinfect   = n_superinfect
+  )
+}
