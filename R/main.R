@@ -962,7 +962,7 @@ sim_population <- function(input_samples, n_samples_out, pop_alpha, coi_r, coi_p
 #' @import dplyr
 #' @importFrom tibble tibble
 #' @importFrom furrr future_map
-#' @importFrom future plan availableCores
+#' @importFrom future plan availableCores multisession
 #' @export
 #' @examples
 #' # simulate pop_alpha 9 (~10% between sample relatedness), coi_r = 0.5, coi_p = 0.2 (COI mean of 3.62, 32% proportion will be monoclonal), k_s = 0.2 (20% of genotypes will be recombinant)
