@@ -313,6 +313,7 @@ sim_sample <- function(k, rho = 7.4e-7, set_props, chrom_sizes = get_pf3d7_chrom
     if (k[i] == 0) {
       ret$genotypes[[i]]$segments <- sim_nonrecomb(index = index_nonrecomb[i], chrom_sizes = chrom_sizes)
     } else {
+
       ret$genotypes[[i]]$segments <- sim_recomb(k = k[i], rho = rho, set_props = set_props, chrom_sizes = chrom_sizes)
     }
   }
@@ -424,66 +425,32 @@ sim_sample_co_transmission <- function(coi,
                                        coi_r, coi_p, max_coi = 100,
                                        rho = 7.4e-7,
                                        set_props, chrom_sizes = get_pf3d7_chrom_sizes()) {
-  # if monoclonal then the mosquito sources doesn't matter
-  if(coi == 1){
-    k = generate_meiosis_number(k_s, max_k)
 
-    ret = sim_sample(k, rho = rho, set_props = set_props, chrom_sizes = chrom_sizes)
-    ret$strain_sources = c(1)
-    return (ret)
-  } else {
-    # get sources of strains
-    mos_sources = assign_strain_sources(coi, n_mosquitos_lambda, mosquitos_dir_conc)
+  # get sources of strains
+  mos_sources = assign_strain_sources(coi, n_mosquitos_lambda, mosquitos_dir_conc)
 
-    # setting up shared parents between strains
-    parents = list()
-    for (i in 1:coi) {
-      parents[[i]] = list()
-    }
-    n_set <- length(set_props)
-    n_chrom <- length(chrom_sizes)
-    # generating same ks for co-transmitted strains
-    # @todo more biological would be some new parents coming into the transmission chain and
-    #       right now 2^k sets number of parents but it would be that the parents were a smaller set
-    #       and recombining each generation with some new parents coming in
-    #       e.g. for k = 3, 8 parents, would be more biological to set 2-3 parents that then recombined 3 times
-    #            with longer chains having a higher likelihood of a strain coming in so for k = 3, maybe 2 original parents
-    #            with 1 new strain coming in at the last generation, would need to recombine with the original parents for 2 generations
-    #            and then bring in new parent
-    k = numeric(coi)
-    for(mos in seq_along(mos_sources$mosquito_counts)){
-      genotype_source_indexes = which(mos_sources$strain_sources == mos)
-      if(mos_sources$mosquito_counts[mos] == 1){
-        current_k =  generate_meiosis_number(k_s, max_k, 0)
-        k[genotype_source_indexes] = current_k
-        if(current_k > 0){
-          current_n_parents <- 2^current_k
-          # @todo, should be taking into account more the amount of co-transmission
-          # max distinct parents should be number of events, COI and chance of co-transmission (currently lacking)
-          max_distinct_parents = min(current_n_parents, 1 + round(mean(replicate(current_k, generate_coi(coi_r = coi_r , coi_p = coi_p)))))
-          # current_parents <- sample(x = n_set, size = current_n_parents, replace = TRUE, prob = set_props)
-          initial_parents = sample(x = n_set, size = max_distinct_parents, replace = TRUE, prob = set_props)
-          if(max_distinct_parents == current_n_parents){
-            current_parents = initial_parents
-          } else {
-            initial_parents = sample(x = n_set, size = max_distinct_parents, replace = TRUE, prob = set_props)
-            if (all(initial_parents == initial_parents[1])) {
-              initial_parents[1] <- sample(x = (1:n_set)[-initial_parents[1]], size = 1, prob = set_props[-initial_parents[1]])
-            }
-            current_parents <- sample(x = initial_parents, size = current_n_parents, replace = TRUE)
-            if (all(current_parents == current_parents[1])) {
-              current_parents[1] <- sample(x = (1:n_set)[-current_parents[1]], size = 1, prob = set_props[-current_parents[1]])
-            }
-          }
-          for(indx in genotype_source_indexes){
-            parents[[indx]] = current_parents
-          }
-        }
-      } else {
-        current_k = generate_meiosis_number(k_s, max_k, 1)
-        k[genotype_source_indexes] = c(rep(current_k, mos_sources$mosquito_counts[mos]))
-        # we want to draw 2^k parents, but they cannot be all identical. Therefore,
-        # draw (2^k - 1) with replacement and then draw the last one to be distinct
+  # setting up shared parents between strains
+  parents = list()
+  for (i in 1:coi) {
+    parents[[i]] = list()
+  }
+  n_set <- length(set_props)
+  n_chrom <- length(chrom_sizes)
+  # generating same ks for co-transmitted strains
+  # @todo more biological would be some new parents coming into the transmission chain and
+  #       right now 2^k sets number of parents but it would be that the parents were a smaller set
+  #       and recombining each generation with some new parents coming in
+  #       e.g. for k = 3, 8 parents, would be more biological to set 2-3 parents that then recombined 3 times
+  #            with longer chains having a higher likelihood of a strain coming in so for k = 3, maybe 2 original parents
+  #            with 1 new strain coming in at the last generation, would need to recombine with the original parents for 2 generations
+  #            and then bring in new parent
+  k = numeric(coi)
+  for(mos in seq_along(mos_sources$mosquito_counts)){
+    genotype_source_indexes = which(mos_sources$strain_sources == mos)
+    if(mos_sources$mosquito_counts[mos] == 1){
+      current_k =  generate_meiosis_number(k_s, max_k, 0)
+      k[genotype_source_indexes] = current_k
+      if(current_k > 0){
         current_n_parents <- 2^current_k
         # @todo, should be taking into account more the amount of co-transmission
         # max distinct parents should be number of events, COI and chance of co-transmission (currently lacking)
@@ -506,38 +473,64 @@ sim_sample_co_transmission <- function(coi,
           parents[[indx]] = current_parents
         }
       }
-    }
-
-    n_nonrecomb <- sum(k == 0)
-    # draw samples without replacement for non-recombinants
-    if (n_nonrecomb > n_set) {
-      stop(sprintf("Cannot generate %s distinct non-recombinant genotypes from sample set of size %s", n_nonrecomb, n_set))
-    }
-    if (n_nonrecomb > 0) {
-      indexes = which(k == 0)
-      non_recombs = sample(x = n_set, size = n_nonrecomb, prob = set_props)
-      for(i in 1:length(non_recombs)){
-        parents[[indexes[i]]] = non_recombs[i]
-      }
-    }
-    ret <- list()
-    ret$k = k
-    ret$COI = coi
-    ret$rho = rho
-    ret$genotypes_sources = mos_sources$strain_sources
-    ret$genotypes = list()
-    for (i in 1:coi) {
-      ret$genotypes[[i]] <- list()
-      ret$genotypes[[i]]$is_nonrecomb <- (k[i] == 0)
-      ret$genotypes[[i]]$index_nonrecomb <- parents[[i]][1]
-      if (k[i] == 0) {
-        ret$genotypes[[i]]$segments <- sim_nonrecomb(index = parents[[i]][1], chrom_sizes = chrom_sizes)
+    } else {
+      current_k = generate_meiosis_number(k_s, max_k, 1)
+      k[genotype_source_indexes] = c(rep(current_k, mos_sources$mosquito_counts[mos]))
+      # we want to draw 2^k parents, but they cannot be all identical. Therefore,
+      # draw (2^k - 1) with replacement and then draw the last one to be distinct
+      current_n_parents <- 2^current_k
+      # @todo, should be taking into account more the amount of co-transmission
+      # max distinct parents should be number of events, COI and chance of co-transmission (currently lacking)
+      max_distinct_parents = min(current_n_parents, 1 + round(mean(replicate(current_k, generate_coi(coi_r = coi_r , coi_p = coi_p)))))
+      # current_parents <- sample(x = n_set, size = current_n_parents, replace = TRUE, prob = set_props)
+      initial_parents = sample(x = n_set, size = max_distinct_parents, replace = TRUE, prob = set_props)
+      if(max_distinct_parents == current_n_parents){
+        current_parents = initial_parents
       } else {
-        ret$genotypes[[i]]$segments <- sim_recomb_given_parents(k = k[i], parents = parents[[i]], rho = rho, chrom_sizes = chrom_sizes)
+        initial_parents = sample(x = n_set, size = max_distinct_parents, replace = TRUE, prob = set_props)
+        if (all(initial_parents == initial_parents[1])) {
+          initial_parents[1] <- sample(x = (1:n_set)[-initial_parents[1]], size = 1, prob = set_props[-initial_parents[1]])
+        }
+        current_parents <- sample(x = initial_parents, size = current_n_parents, replace = TRUE)
+        if (all(current_parents == current_parents[1])) {
+          current_parents[1] <- sample(x = (1:n_set)[-current_parents[1]], size = 1, prob = set_props[-current_parents[1]])
+        }
+      }
+      for(indx in genotype_source_indexes){
+        parents[[indx]] = current_parents
       }
     }
-    return(ret)
   }
+
+  n_nonrecomb <- sum(k == 0)
+  # draw samples without replacement for non-recombinants
+  if (n_nonrecomb > n_set) {
+    stop(sprintf("Cannot generate %s distinct non-recombinant genotypes from sample set of size %s", n_nonrecomb, n_set))
+  }
+  if (n_nonrecomb > 0) {
+    indexes = which(k == 0)
+    non_recombs = sample(x = n_set, size = n_nonrecomb, prob = set_props)
+    for(i in 1:length(non_recombs)){
+      parents[[indexes[i]]] = non_recombs[i]
+    }
+  }
+  ret <- list()
+  ret$k = k
+  ret$COI = coi
+  ret$rho = rho
+  ret$genotypes_sources = mos_sources$strain_sources
+  ret$genotypes = list()
+  for (i in 1:coi) {
+    ret$genotypes[[i]] <- list()
+    ret$genotypes[[i]]$is_nonrecomb <- (k[i] == 0)
+    ret$genotypes[[i]]$index_nonrecomb <- parents[[i]][1]
+    if (k[i] == 0) {
+      ret$genotypes[[i]]$segments <- sim_nonrecomb(index = parents[[i]][1], chrom_sizes = chrom_sizes)
+    } else {
+      ret$genotypes[[i]]$segments <- sim_recomb_given_parents(k = k[i], parents = parents[[i]], rho = rho, chrom_sizes = chrom_sizes)
+    }
+  }
+  return(ret)
 }
 
 
