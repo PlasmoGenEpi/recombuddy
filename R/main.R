@@ -374,10 +374,10 @@ generate_coi_n <- function(n, coi_r, coi_p, max_coi = 100){
 
 
 #------------------------------------------------
-#' @title Simulate a single sample
+#' @title Simulate a single sample with co-transmission
 #'
 #' @description Simulates one or more haploid genotypes within a single sample
-#'   by drawing ancestors from a sample set and applying recombination.
+#'   by drawing ancestors from a sample set and applying recombination while also taking into account co-transmission
 #'
 #' @param coi the number of strains to simulate
 #' @param n_mosquitos_lambda the lambda value to be given to \code{\link{assign_strain_sources}}
@@ -532,6 +532,169 @@ sim_sample_co_transmission <- function(coi,
   }
   return(ret)
 }
+
+
+#------------------------------------------------
+#' @title Simulate a single sample with no co-transmission
+#'
+#' @description Simulates one or more haploid genotypes within a single sample
+#'   by drawing ancestors from a sample set and applying recombination with no co-transmission
+#'
+#' @param coi the number of strains to simulate
+#' @param n_mosquitos_lambda the lambda value to be given to \code{\link{assign_strain_sources}}
+#'   to simulate number of mosquito bites that lead to this infection
+#' @param mosquitos_dir_conc the alpha concentration value to be given to \code{\link{assign_strain_sources}}
+#'   to control the skew of strains being contributed by each mosquito, lower values mean
+#' @param coi_r,coi_p the r and p parameters to be given to the zero truncated negative binomial distribution COI generator `recombuddy::rztnbinom()` see `?rztnbinom` for more details
+#' @param max_coi the maximum allowable COI
+#' @param k_s the s parameter to be given to the type 1 geometric distribution random generator function `rgeom()` to select for serial meiosis
+#' @param max_k the maximum k allowed
+#' @param rho the recombination rate (per-site, per-meiosis). By default uses
+#'   the value 7.4e-7 from Miles et al. (2016).
+#' @param set_props proportions of each of the members of the sample set.
+#'   Dictates the probability they are chosen as an ancestor.
+#' @param chrom_sizes lengths of each chromosome, default taken from `get_pf3d7_chrom_sizes()`
+#'   by default.
+#'
+#' @references
+#' Miles A, Iqbal Z, Vauterin P, Pearson R, Campino S, Theron M, Gould K, Mead D, Drury E, O'Brien J, et al. (2016).
+#' *Indels, structural variation, and recombination drive genomic diversity in Plasmodium falciparum*.
+#' Genome Research, 26(9), 1288–1299.
+#' \doi{10.1101/gr.203711.115}
+#'
+#'
+#' @return A list with one element per haploid genome. Within each element is
+#'   another list with three elements; the first two specify whether the
+#'   genotype was copied over without recombination, and if so, which ancestor
+#'   was it copied from. The final element `segments` contains the richest
+#'   information - a tibble giving segments along the genome and which memeber
+#'   of the sample set is ancestral to each segment.
+#'
+#' @references
+#' Miles A, Iqbal Z, Vauterin P, Pearson R, Campino S, Theron M, Gould K, Mead D, Drury E, O'Brien J, et al. (2016).
+#' *Indels, structural variation, and recombination drive genomic diversity in Plasmodium falciparum*.
+#' Genome Research, 26(9), 1288–1299.
+#' \doi{10.1101/gr.203711.115}
+#'
+#' @importFrom tibble tibble
+#' @importFrom stats rgeom
+#' @export
+
+sim_sample_no_co_transmission <- function(coi,
+                                       k_s, max_k = 20,
+                                       coi_r, coi_p, max_coi = 100,
+                                       rho = 7.4e-7,
+                                       set_props, chrom_sizes = get_pf3d7_chrom_sizes()) {
+
+  # no co-transmission so make all sources for all strains separate
+  mos_sources = list()
+  mos_sources$mosquito_counts = rep(1, coi)
+  mos_sources$strain_sources = 1:coi
+
+  # setting up shared parents between strains
+  parents = list()
+  for (i in 1:coi) {
+    parents[[i]] = list()
+  }
+  n_set <- length(set_props)
+  n_chrom <- length(chrom_sizes)
+  # generating same ks for co-transmitted strains
+  # @todo more biological would be some new parents coming into the transmission chain and
+  #       right now 2^k sets number of parents but it would be that the parents were a smaller set
+  #       and recombining each generation with some new parents coming in
+  #       e.g. for k = 3, 8 parents, would be more biological to set 2-3 parents that then recombined 3 times
+  #            with longer chains having a higher likelihood of a strain coming in so for k = 3, maybe 2 original parents
+  #            with 1 new strain coming in at the last generation, would need to recombine with the original parents for 2 generations
+  #            and then bring in new parent
+  k = numeric(coi)
+  for(mos in seq_along(mos_sources$mosquito_counts)){
+    genotype_source_indexes = which(mos_sources$strain_sources == mos)
+    if(mos_sources$mosquito_counts[mos] == 1){
+      current_k =  generate_meiosis_number(k_s, max_k, 0)
+      k[genotype_source_indexes] = current_k
+      if(current_k > 0){
+        current_n_parents <- 2^current_k
+        # @todo, should be taking into account more the amount of co-transmission
+        # max distinct parents should be number of events, COI and chance of co-transmission (currently lacking)
+        max_distinct_parents = min(current_n_parents, 1 + round(mean(replicate(current_k, generate_coi(coi_r = coi_r , coi_p = coi_p)))))
+        # current_parents <- sample(x = n_set, size = current_n_parents, replace = TRUE, prob = set_props)
+        initial_parents = sample(x = n_set, size = max_distinct_parents, replace = TRUE, prob = set_props)
+        if(max_distinct_parents == current_n_parents){
+          current_parents = initial_parents
+        } else {
+          initial_parents = sample(x = n_set, size = max_distinct_parents, replace = TRUE, prob = set_props)
+          if (all(initial_parents == initial_parents[1])) {
+            initial_parents[1] <- sample(x = (1:n_set)[-initial_parents[1]], size = 1, prob = set_props[-initial_parents[1]])
+          }
+          current_parents <- sample(x = initial_parents, size = current_n_parents, replace = TRUE)
+          if (all(current_parents == current_parents[1])) {
+            current_parents[1] <- sample(x = (1:n_set)[-current_parents[1]], size = 1, prob = set_props[-current_parents[1]])
+          }
+        }
+        for(indx in genotype_source_indexes){
+          parents[[indx]] = current_parents
+        }
+      }
+    } else {
+      current_k = generate_meiosis_number(k_s, max_k, 1)
+      k[genotype_source_indexes] = c(rep(current_k, mos_sources$mosquito_counts[mos]))
+      # we want to draw 2^k parents, but they cannot be all identical. Therefore,
+      # draw (2^k - 1) with replacement and then draw the last one to be distinct
+      current_n_parents <- 2^current_k
+      # @todo, should be taking into account more the amount of co-transmission
+      # max distinct parents should be number of events, COI and chance of co-transmission (currently lacking)
+      max_distinct_parents = min(current_n_parents, 1 + round(mean(replicate(current_k, generate_coi(coi_r = coi_r , coi_p = coi_p)))))
+      # current_parents <- sample(x = n_set, size = current_n_parents, replace = TRUE, prob = set_props)
+      initial_parents = sample(x = n_set, size = max_distinct_parents, replace = TRUE, prob = set_props)
+      if(max_distinct_parents == current_n_parents){
+        current_parents = initial_parents
+      } else {
+        initial_parents = sample(x = n_set, size = max_distinct_parents, replace = TRUE, prob = set_props)
+        if (all(initial_parents == initial_parents[1])) {
+          initial_parents[1] <- sample(x = (1:n_set)[-initial_parents[1]], size = 1, prob = set_props[-initial_parents[1]])
+        }
+        current_parents <- sample(x = initial_parents, size = current_n_parents, replace = TRUE)
+        if (all(current_parents == current_parents[1])) {
+          current_parents[1] <- sample(x = (1:n_set)[-current_parents[1]], size = 1, prob = set_props[-current_parents[1]])
+        }
+      }
+      for(indx in genotype_source_indexes){
+        parents[[indx]] = current_parents
+      }
+    }
+  }
+
+  n_nonrecomb <- sum(k == 0)
+  # draw samples without replacement for non-recombinants
+  if (n_nonrecomb > n_set) {
+    stop(sprintf("Cannot generate %s distinct non-recombinant genotypes from sample set of size %s", n_nonrecomb, n_set))
+  }
+  if (n_nonrecomb > 0) {
+    indexes = which(k == 0)
+    non_recombs = sample(x = n_set, size = n_nonrecomb, prob = set_props)
+    for(i in 1:length(non_recombs)){
+      parents[[indexes[i]]] = non_recombs[i]
+    }
+  }
+  ret <- list()
+  ret$k = k
+  ret$COI = coi
+  ret$rho = rho
+  ret$genotypes_sources = mos_sources$strain_sources
+  ret$genotypes = list()
+  for (i in 1:coi) {
+    ret$genotypes[[i]] <- list()
+    ret$genotypes[[i]]$is_nonrecomb <- (k[i] == 0)
+    ret$genotypes[[i]]$index_nonrecomb <- parents[[i]][1]
+    if (k[i] == 0) {
+      ret$genotypes[[i]]$segments <- sim_nonrecomb(index = parents[[i]][1], chrom_sizes = chrom_sizes)
+    } else {
+      ret$genotypes[[i]]$segments <- sim_recomb_given_parents(k = k[i], parents = parents[[i]], rho = rho, chrom_sizes = chrom_sizes)
+    }
+  }
+  return(ret)
+}
+
 
 
 #------------------------------------------------
@@ -1019,6 +1182,86 @@ sim_population_co_transmission <- function(input_samples, n_samples_out, pop_alp
 
   return(ret)
 }
+
+
+#' @title Population simulator
+#'
+#' @description
+#' Simulate a number of samples of a new population from a previous ancestral population, make no adjustments for co transmission
+#'
+#'
+#' @param input_samples a character list of samples, this will be the ancestral genotypes for the simulated population
+#' @param n_samples_out the number of samples to generate
+#' @param pop_alpha the alpha parameter to set for the dirichlet function for the population proportions, lower alphas generate more closely related final populations
+#' @param coi_r,coi_p the r and p parameters to be given to the zero truncated negative binomial distribution COI generator `recombuddy::rztnbinom()` see `?rztnbinom` for more details
+#' @param k_s the s parameter to be given to the type 1 geometric distribution random generator function `rgeom()` to select for serial meiosis
+#' @param max_k the maximum k allowed
+#' @param max_coi the maximum allowable COI
+#' @param rho the recombination rate
+#' @param chrom_sizes a named vector of lengths of chromosome lengths
+#'
+#' @returns a list the simulated population and look up tables of population proportions, sample indexes, and chromosome sizes
+#' @import dplyr
+#' @importFrom tibble tibble
+#' @importFrom furrr future_map furrr_options
+#' @importFrom future plan availableCores multisession
+#' @export
+#' @examples
+#' # simulate pop_alpha 9 (~10% between sample relatedness), coi_r = 0.5, coi_p = 0.2 (COI mean of 3.62, 32% proportion will be monoclonal), k_s = 0.2 (20% of genotypes will be recombinant)
+#' pop1 = sim_population_no_co_transmission(paste0("sample", seq(0,100,1)), 5, pop_alpha = 9, coi_r = 0.5, coi_p = 0.2, k_s = 0.2)
+
+sim_population_no_co_transmission <- function(input_samples, n_samples_out, pop_alpha,
+                                           coi_r, coi_p,
+                                           k_s, max_k = 20,
+                                           max_coi = 100, rho = 7.4e-7,
+                                           chrom_sizes = get_pf3d7_chrom_sizes(),
+                                           n_cores = NULL) {
+  ret  <- list()
+
+  input_samples_df <- tibble(ancestral_genotype = input_samples) |>
+    mutate(index = row_number())
+  ret[["ancestral_indexes"]] <- input_samples_df
+
+  set_props <- rdirichlet_single(nrow(input_samples_df), alpha = pop_alpha)
+
+  ret[["parameters"]] <- list(
+    set_props         = set_props,
+    chrom_sizes       = chrom_sizes,
+    pop_alpha         = pop_alpha,
+    coi_r             = coi_r,
+    coi_p             = coi_p,
+    k_s               = k_s,
+    max_k             = max_k,
+    max_coi           = max_coi,
+    rho               = rho
+  )
+
+  # set up parallel backend
+  # defaults to all available cores minus 1 to keep the session responsive
+  n_cores <- n_cores %||% max(1L, availableCores() - 1L)
+  plan(multisession, workers = n_cores)
+
+  ret[["simulated_samples"]] <- future_map(
+    seq_len(n_samples_out),
+    function(i) {
+      current_coi <- generate_coi(coi_r = coi_r, coi_p = coi_p, max_coi = max_coi)
+      sim_sample_no_co_transmission(
+        coi               = current_coi,
+        coi_r             = coi_r,
+        coi_p             = coi_p,
+        max_coi           = max_coi,
+        k_s               = k_s,
+        max_k             = max_k,
+        rho               = rho,
+        set_props         = set_props,
+        chrom_sizes       = chrom_sizes
+      )
+    },
+    .options = furrr_options(seed = TRUE)
+  )
+  return(ret)
+}
+
 
 
 
