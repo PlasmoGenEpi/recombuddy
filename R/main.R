@@ -8,7 +8,11 @@ if (getRversion() >= "2.15.1") {
   utils::globalVariables(c(
     "pos", "WSAF", "REF", "ALT", "PLAF", "chrom",
     "index", "start", "end", "genotype", "prop",
-    "chrom_start", "chrom_col", "group"
+    "chrom_start", "chrom_col", "group",
+    "sample_id", "sample_label", "genotype_label",
+    "segment_length", "ancestry_total_bp", "ancestry_prop",
+    "n_genotypes", "index_total_bp", "sample_ancestry_prop",
+    "target", "error"
   ))
 }
 
