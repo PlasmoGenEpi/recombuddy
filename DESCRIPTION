@@ -15,7 +15,6 @@ Description: recombuddy is a lightweight genetic simulation toolkit designed to 
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.3.2
 Imports: 
     dplyr,
     extraDistr,
@@ -23,5 +22,7 @@ Imports:
     MCMCpack,
     tibble,
     tidyr,
-    validate
+    validate,
+    scales
 Depends: R (>= 4.1.0)
+Config/roxygen2/version: 8.0.0
