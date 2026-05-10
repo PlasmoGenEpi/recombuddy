@@ -59,7 +59,7 @@ df_all_genotypes |> plot_segment_lengths()
 # pop_alpha 9 (~10% between sample relatedness)
 # coi_r = 0.25, coi_p = 0.7 (COI mean of 1.256, ~80.4% proportion will be monoclonal)
 # k_s = 0.5 (50% of genotypes will be recombinant)
-pop1 = sim_population(paste0("sample", seq(0,100,1)), 10, pop_alpha = 9, coi_r = 0.25, coi_p = 0.7, k_s = 0.5)
+pop1 <- sim_population(paste0("sample", seq(0,100,1)), 10, pop_alpha = 9, coi_r = 0.25, coi_p = 0.7, k_s = 0.5)
 
 # New functionality for getting genotype table for a population (with multiple samples), basically a wrapper
 # for get_all_genotypes()
@@ -73,11 +73,11 @@ df_pop1_ancestry
 
 ## By genotype
 df_pop1_ancestry |>
-  plot_ancestry_composition(by = "genotype") + labs(title = "Population 2")
+  plot_ancestry_composition(by = "genotype") + labs(title = "Population 1")
 
 ## By sample
 df_pop1_ancestry |>
-  plot_ancestry_composition(by = "sample") + labs(title = "Population 2")
+  plot_ancestry_composition(by = "sample") + labs(title = "Population 1")
 
 # Plotting segment length (the same function works for both single samples and populations of samples)
 df_pop1_genotypes |>
@@ -88,7 +88,7 @@ df_pop1_genotypes |>
 # pop_alpha 9 (~10% between sample relatedness)
 # coi_r = 0.25, coi_p = 0.7 (COI mean of 1.256, ~80.4% proportion will be monoclonal)
 # k_s = 0.5 (50% of genotypes will be recombinant)
-pop2 = sim_population(paste0("sample", seq(0,100,1)), 50, pop_alpha = 9, coi_r = 0.25, coi_p = 0.7, k_s = 0.5)
+pop2 <- sim_population(paste0("sample", seq(0,100,1)), 50, pop_alpha = 9, coi_r = 0.25, coi_p = 0.7, k_s = 0.5)
 
 df_pop2_genotypes <- pop2 |> get_population_genotypes()
 

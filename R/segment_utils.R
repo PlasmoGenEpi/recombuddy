@@ -201,7 +201,7 @@ plot_ancestry_composition <- function(df_ancestry, by = c("genotype", "sample"))
 
     p <-  df_plot |>
       ggplot(aes(x = ancestry_prop, y = genotype_label, fill = factor(index))) +
-        geom_col(width = 0.8, color = grey(0)) +
+        geom_col(width = 0.8, color = grDevices::grey(0)) +
         scale_x_continuous(breaks = scales::pretty_breaks(n=3),
                            labels = scales::percent_format(),
                            expand = c(0,0)) +
@@ -238,7 +238,7 @@ plot_ancestry_composition <- function(df_ancestry, by = c("genotype", "sample"))
 
     p <- df_plot |>
       ggplot(aes(x = sample_ancestry_prop, y = sample_label, fill = factor(index))) +
-        geom_col(width = 0.8, color = grey(0)) +
+        geom_col(width = 0.8, color = grDevices::grey(0)) +
         scale_x_continuous(breaks = scales::pretty_breaks(n=5),
                            labels = scales::percent_format(),
                            expand = c(0,0)) +
