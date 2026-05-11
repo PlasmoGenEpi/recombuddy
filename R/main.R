@@ -8,7 +8,11 @@ if (getRversion() >= "2.15.1") {
   utils::globalVariables(c(
     "pos", "WSAF", "REF", "ALT", "PLAF", "chrom",
     "index", "start", "end", "genotype", "prop",
-    "chrom_start", "chrom_col", "group"
+    "chrom_start", "chrom_col", "group",
+    "sample_id", "sample_label", "genotype_label",
+    "segment_length", "ancestry_total_bp", "ancestry_prop",
+    "n_genotypes", "index_total_bp", "sample_ancestry_prop",
+    "target", "error"
   ))
 }
 
@@ -275,7 +279,8 @@ plot_genotypes <- function(df_genotypes) {
     geom_rect(aes(xmin = start, xmax = end, ymin = as.numeric(chrom) - 0.4, ymax = as.numeric(chrom) + 0.4,
                   fill = as.factor(index)), color = grey(0)) +
     facet_wrap(~sprintf("Genotype_%s", genotype)) +
-    scale_fill_discrete(name = "Ancestral Index") +
+    # scale_fill_discrete(name = "Ancestral Index") +
+    scale_fill_viridis_d(name = "Ancestral Index", option = "turbo") +
     scale_y_continuous(breaks = 1:n_distinct(df_genotypes$chrom),
                        labels = levels(factor(df_genotypes$chrom)))
 }
